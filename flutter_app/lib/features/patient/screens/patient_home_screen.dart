@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../pairing/screens/pair_caregiver_screen.dart';
+import '../../pairing/screens/connected_caregivers_screen.dart';
 
 class PatientHomeScreen extends StatefulWidget {
   final String userName;
@@ -1830,10 +1832,28 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             child: Column(
               children: [
                 _buildProfileListTile(
-                  icon: Icons.shield_outlined,
-                  title: 'Caregiver',
-                  subtitle: 'Anna Delgado (daughter)',
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: 'Pair Caregiver via QR',
+                  subtitle: 'Generate secure QR code for caregivers',
                   showDivider: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PairCaregiverScreen()),
+                    );
+                  },
+                ),
+                _buildProfileListTile(
+                  icon: Icons.people_outline_rounded,
+                  title: 'Connected Caregivers',
+                  subtitle: 'Manage active caregiver access',
+                  showDivider: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ConnectedCaregiversScreen()),
+                    );
+                  },
                 ),
                 _buildProfileListTile(
                   icon: Icons.developer_board_rounded,
@@ -1937,48 +1957,53 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     required String title,
     required String subtitle,
     required bool showDivider,
+    VoidCallback? onTap,
   }) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE6F7F0),
-                  shape: BoxShape.circle,
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F7F0),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: const Color(0xFF00A36C), size: 22),
                 ),
-                child: Icon(icon, color: const Color(0xFF00A36C), size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B7280),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF6B7280),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF9CA3AF), size: 24),
-            ],
+                const Icon(Icons.chevron_right_rounded, color: Color(0xFF9CA3AF), size: 24),
+              ],
+            ),
           ),
         ),
         if (showDivider)

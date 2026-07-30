@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/screens/splash_screen.dart';
@@ -76,6 +77,23 @@ class _RootNavigatorState extends State<_RootNavigator> {
   Future<void> _signOut() async {
     await _auth.signOut();
     _nav.pushAndRemoveUntil(_fadeRoute(_buildAuthChoice()), (_) => false);
+  }
+
+  /// Persistent Auth Check: Automatically skip login if user has an active session
+  Future<void> _checkInitialAuthSession() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      try {
+        final profile = await _auth.getUserProfile(currentUser.uid);
+        final role = profile?['role'] ?? 'patient';
+        final name = profile?['name'] ?? currentUser.displayName ?? 'User';
+        _pushDashboard(role, name);
+        return;
+      } catch (e) {
+        debugPrint('Error checking auth session: $e');
+      }
+    }
+    _nav.pushReplacement(_fadeRoute(_buildAuthChoice()));
   }
 
   // ── Screen builders ───────────────────────────────────────────────────────
@@ -167,8 +185,7 @@ class _RootNavigatorState extends State<_RootNavigator> {
         onGenerateInitialRoutes: (_, __) => [
           MaterialPageRoute(
             builder: (_) => SplashScreen(
-              onFinish: () =>
-                  _nav.pushReplacement(_fadeRoute(_buildAuthChoice())),
+              onFinish: _checkInitialAuthSession,
             ),
           ),
         ],

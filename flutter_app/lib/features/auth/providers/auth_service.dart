@@ -276,7 +276,7 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // ─── Get Role ─────────────────────────────────────────────────────────────
+  // ─── Get Role & Profile ───────────────────────────────────────────────────
 
   Future<String> getUserRole(String uid) async {
     try {
@@ -288,6 +288,29 @@ class AuthService {
       }
     } catch (_) {}
     return 'patient';
+  }
+
+  /// Fetch user profile data from Firestore.
+  Future<Map<String, dynamic>?> getUserProfile(String uid) async {
+    try {
+      final DocumentSnapshot doc =
+          await _firestore.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data() as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Real-time stream of user profile data from Firestore.
+  Stream<DocumentSnapshot<Map<String, dynamic>>> userProfileStream(String uid) {
+    return _firestore.collection('users').doc(uid).snapshots();
+  }
+
+  /// Update user profile fields in Firestore.
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
+    data['updatedAt'] = FieldValue.serverTimestamp();
+    await _firestore.collection('users').doc(uid).set(data, SetOptions(merge: true));
   }
 
   // ─── Sign Out ─────────────────────────────────────────────────────────────

@@ -16,40 +16,12 @@ class SignupStep1Screen extends StatefulWidget {
   State<SignupStep1Screen> createState() => _SignupStep1ScreenState();
 }
 
-class _SignupStep1ScreenState extends State<SignupStep1Screen>
-    with SingleTickerProviderStateMixin {
+class _SignupStep1ScreenState extends State<SignupStep1Screen> {
   String _selectedRole = 'patient';
-
-  late AnimationController _ctrl;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: SlideTransition(
-        position: _slideAnim,
-        child: Column(
+    return Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -181,9 +153,7 @@ class _SignupStep1ScreenState extends State<SignupStep1Screen>
               ),
             ),
           ],
-        ),
-      ),
-    );
+        );
   }
 }
 

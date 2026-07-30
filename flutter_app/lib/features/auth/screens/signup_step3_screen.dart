@@ -61,6 +61,7 @@ class SignupStep3Screen extends StatefulWidget {
   final String? profilePhotoUrl;
   final VoidCallback onBack;
   final Function(String role, String name) onSignupSuccess;
+  final ValueChanged<bool>? onCreatingChanged;
 
   const SignupStep3Screen({
     super.key,
@@ -75,6 +76,7 @@ class SignupStep3Screen extends StatefulWidget {
     this.profilePhotoUrl,
     required this.onBack,
     required this.onSignupSuccess,
+    this.onCreatingChanged,
   });
 
   @override
@@ -136,6 +138,7 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
       _isLoading = true;
       _errorMessage = null;
     });
+    widget.onCreatingChanged?.call(true);
 
     try {
       String? error;
@@ -168,12 +171,14 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
 
       if (error != null) {
         setState(() => _errorMessage = error);
+        widget.onCreatingChanged?.call(false);
       } else {
         widget.onSignupSuccess(widget.role, widget.name);
       }
     } catch (e) {
       setState(
           () => _errorMessage = e.toString().replaceAll('Exception: ', ''));
+      widget.onCreatingChanged?.call(false);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

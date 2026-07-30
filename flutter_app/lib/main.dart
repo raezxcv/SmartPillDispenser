@@ -18,25 +18,9 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: SmartPillDispenserApp()));
 }
-
 // ── Route helpers ─────────────────────────────────────────────────────────────
 
-/// Slide right→left (forward between signup steps).
-/// When popped, Flutter automatically reverses to left→right.
-Route<T> _slideForwardRoute<T>(Widget page) {
-  return PageRouteBuilder<T>(
-    pageBuilder: (_, __, ___) => page,
-    transitionDuration: const Duration(milliseconds: 380),
-    reverseTransitionDuration: const Duration(milliseconds: 320),
-    transitionsBuilder: (_, anim, __, child) {
-      // forward: slide in from right (right→left)
-      // reverse (pop): slide out to right (left→right) — automatic
-      final tween = Tween(begin: const Offset(1.0, 0), end: Offset.zero)
-          .chain(CurveTween(curve: Curves.easeOutCubic));
-      return SlideTransition(position: anim.drive(tween), child: child);
-    },
-  );
-}
+
 
 /// Fade — used for top-level auth transitions (splash, auth choice, login, dashboard)
 Route<T> _fadeRoute<T>(Widget page) {
@@ -194,10 +178,9 @@ class _RootNavigatorState extends State<_RootNavigator> {
 }
 
 // ── Self-contained 3-step Signup Flow ────────────────────────────────────────
-// Uses its own nested Navigator so step-to-step slides (right→left / left→right)
-// are isolated from the outer Navigator.
-// The outer Navigator pushes this widget with a FADE route so step 1's entrance
-// matches the login screen. Steps 2 and 3 slide right→left; back slides left→right.
+// Uses a custom sliding page switcher so that BOTH the outgoing and incoming
+// pages animate simultaneously (old exits left, new enters from right).
+// The floating top bar stays completely fixed.
 
 class _SignupFlow extends StatefulWidget {
   final void Function(String role, String name) onSuccess;
@@ -220,11 +203,20 @@ class _SignupFlow extends StatefulWidget {
   State<_SignupFlow> createState() => _SignupFlowState();
 }
 
-class _SignupFlowState extends State<_SignupFlow> {
-  final _flowKey = GlobalKey<NavigatorState>();
-  NavigatorState get _flow => _flowKey.currentState!;
+class _SignupFlowState extends State<_SignupFlow>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _slideCtrl;
+  late Animation<Offset> _incomingSlide;
+  late Animation<Offset> _outgoingSlide;
 
   int _currentStep = 1;
+  bool _isForward = true;
+  bool _isAnimating = false;
+  bool _isCreating = false;
+
+  // We keep both old and new page widgets to cross-animate them
+  late Widget _currentPage;
+  Widget? _previousPage;
 
   // Signup draft
   String _role = 'patient';
@@ -238,13 +230,67 @@ class _SignupFlowState extends State<_SignupFlow> {
   void initState() {
     super.initState();
     _name = widget.initialName;
+
+    _slideCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _slideCtrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _isAnimating = false;
+          _previousPage = null;
+        });
+      }
+    });
+
+    _buildTweens();
+    _currentPage = _buildStep1();
   }
+
+  void _buildTweens() {
+    const curve = Curves.easeInOutCubic;
+    if (_isForward) {
+      _incomingSlide =
+          Tween(begin: const Offset(1.0, 0.0), end: Offset.zero)
+              .animate(CurvedAnimation(parent: _slideCtrl, curve: curve));
+      _outgoingSlide =
+          Tween(begin: Offset.zero, end: const Offset(-1.0, 0.0))
+              .animate(CurvedAnimation(parent: _slideCtrl, curve: curve));
+    } else {
+      _incomingSlide =
+          Tween(begin: const Offset(-1.0, 0.0), end: Offset.zero)
+              .animate(CurvedAnimation(parent: _slideCtrl, curve: curve));
+      _outgoingSlide =
+          Tween(begin: Offset.zero, end: const Offset(1.0, 0.0))
+              .animate(CurvedAnimation(parent: _slideCtrl, curve: curve));
+    }
+  }
+
+  void _animateToPage(Widget newPage, {required bool forward}) {
+    if (_isAnimating) return;
+    setState(() {
+      _isForward = forward;
+      _buildTweens();
+      _previousPage = _currentPage;
+      _currentPage = newPage;
+      _isAnimating = true;
+    });
+    _slideCtrl.forward(from: 0.0);
+  }
+
+  @override
+  void dispose() {
+    _slideCtrl.dispose();
+    super.dispose();
+  }
+
+  // ── Step callbacks ─────────────────────────────────────────────────────────
 
   void _onStep1Done(String role) {
     _role = role;
-    setState(() => _currentStep = 2);
-    // Step 1 → 2: slide right→left
-    _flow.push(_slideForwardRoute(_buildStep2()));
+    _currentStep = 2;
+    _animateToPage(_buildStep2(), forward: true);
   }
 
   void _onStep2Done(
@@ -254,27 +300,51 @@ class _SignupFlowState extends State<_SignupFlow> {
     _dob = dob;
     _gender = gender;
     _address = address;
-    setState(() => _currentStep = 3);
-    // Step 2 → 3: slide right→left
-    _flow.push(_slideForwardRoute(_buildStep3()));
+    _currentStep = 3;
+    _animateToPage(_buildStep3(), forward: true);
   }
 
   void _handleBack() {
-    if (_flowKey.currentState?.canPop() ?? false) {
-      setState(() => _currentStep--);
-      _flow.pop();
+    if (_isAnimating || _isCreating) return;
+    if (_currentStep > 1) {
+      _currentStep--;
+      final Widget target =
+          _currentStep == 1 ? _buildStep1() : _buildStep2();
+      _animateToPage(target, forward: false);
     } else {
       Navigator.of(context).pop();
     }
   }
 
+  void _onSignupSuccess(String role, String name) {
+    setState(() {
+      _isCreating = false;
+      _currentStep = 4;
+    });
+    _animateToPage(_buildSuccessScreen(role, name), forward: true);
+  }
+
+  void _onCreatingChanged(bool creating) {
+    if (mounted) setState(() => _isCreating = creating);
+  }
+
+  // ── Page builders ──────────────────────────────────────────────────────────
+
+  Widget _buildStep1() => SignupStep1Screen(
+        key: const ValueKey('step1'),
+        onBack: _handleBack,
+        onNext: _onStep1Done,
+      );
+
   Widget _buildStep2() => SignupStep2Screen(
+        key: const ValueKey('step2'),
         initialName: _name,
         onBack: _handleBack,
         onNext: _onStep2Done,
       );
 
   Widget _buildStep3() => SignupStep3Screen(
+        key: const ValueKey('step3'),
         role: _role,
         name: _name,
         phone: _phone,
@@ -285,13 +355,27 @@ class _SignupFlowState extends State<_SignupFlow> {
         googleUid: widget.googleUid,
         profilePhotoUrl: widget.profilePhotoUrl,
         onBack: _handleBack,
-        onSignupSuccess: widget.onSuccess,
+        onSignupSuccess: _onSignupSuccess,
+        onCreatingChanged: _onCreatingChanged,
+      );
+
+  Widget _buildSuccessScreen(String role, String name) =>
+      _SignupSuccessScreen(
+        key: const ValueKey('success'),
+        name: name,
+        onContinue: () => widget.onSuccess(role, name),
       );
 
   @override
   Widget build(BuildContext context) {
-    return NavigatorPopHandler(
-      onPopWithResult: (_) => _handleBack(),
+    final bool showTopBar = _currentStep <= 3;
+    final int displayStep = _currentStep.clamp(1, 3);
+
+    return PopScope(
+      canPop: _currentStep <= 1 && !_isCreating,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _handleBack();
+      },
       child: Scaffold(
         body: Container(
           width: double.infinity,
@@ -311,76 +395,261 @@ class _SignupFlowState extends State<_SignupFlow> {
           child: SafeArea(
             child: Column(
               children: [
-                // ── FLOATING STATIC TOP BAR (Does not slide with card pages) ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 12),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: _handleBack,
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 10,
-                                offset: const Offset(0, 3),
+                // ── FLOATING STATIC TOP BAR ────────────────────────────────
+                if (showTopBar)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                    child: Row(
+                      children: [
+                        // Back button — greyed out during account creation
+                        GestureDetector(
+                          onTap: _isCreating ? null : _handleBack,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: _isCreating ? 0.35 : 1.0,
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.chevron_left_rounded,
-                            color: Color(0xFF1F2937),
-                            size: 26,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _SignupProgressBar(value: _currentStep / 3.0),
-                      ),
-                      const SizedBox(width: 16),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 250),
-                        child: Text(
-                          'STEP $_currentStep OF 3',
-                          key: ValueKey(_currentStep),
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF00A36C),
+                              child: const Icon(
+                                Icons.chevron_left_rounded,
+                                color: Color(0xFF1F2937),
+                                size: 26,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child:
+                              _SignupProgressBar(value: displayStep / 3.0),
+                        ),
+                        const SizedBox(width: 16),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          child: Text(
+                            'STEP $displayStep OF 3',
+                            key: ValueKey(displayStep),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF00A36C),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                // ── SLIDING STEP CONTENT PAGES ─────────────────────────────
+                // ── SLIDING STEP CONTENT ────────────────────────────────────
                 Expanded(
-                  child: Navigator(
-                    key: _flowKey,
-                    onGenerateInitialRoutes: (_, __) => [
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => SignupStep1Screen(
-                          onBack: _handleBack,
-                          onNext: _onStep1Done,
-                        ),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                        transitionsBuilder: (_, __, ___, child) => child,
-                      ),
-                    ],
+                  child: ClipRect(
+                    child: Stack(
+                      children: [
+                        // Previous page (sliding out)
+                        if (_previousPage != null)
+                          SlideTransition(
+                            position: _outgoingSlide,
+                            child: _previousPage!,
+                          ),
+                        // Current page (sliding in, or static)
+                        _isAnimating
+                            ? SlideTransition(
+                                position: _incomingSlide,
+                                child: _currentPage,
+                              )
+                            : _currentPage,
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Signup Success Screen ────────────────────────────────────────────────────
+
+class _SignupSuccessScreen extends StatefulWidget {
+  final String name;
+  final VoidCallback onContinue;
+
+  const _SignupSuccessScreen({
+    super.key,
+    required this.name,
+    required this.onContinue,
+  });
+
+  @override
+  State<_SignupSuccessScreen> createState() => _SignupSuccessScreenState();
+}
+
+class _SignupSuccessScreenState extends State<_SignupSuccessScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _checkCtrl;
+  late AnimationController _fadeCtrl;
+  late Animation<double> _checkScale;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _checkCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _checkScale = CurvedAnimation(
+      parent: _checkCtrl,
+      curve: Curves.elasticOut,
+    );
+
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _fadeAnim = CurvedAnimation(
+      parent: _fadeCtrl,
+      curve: Curves.easeOut,
+    );
+
+    // Check bounces in → then text fades in
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _checkCtrl.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) _fadeCtrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _checkCtrl.dispose();
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Animated checkmark circle
+            ScaleTransition(
+              scale: _checkScale,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          const Color(0xFF00A36C).withValues(alpha: 0.35),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 56,
+                ),
+              ),
+            ),
+            const SizedBox(height: 36),
+
+            // Title & subtitle
+            FadeTransition(
+              opacity: _fadeAnim,
+              child: Column(
+                children: [
+                  const Text(
+                    'Account Created!',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1F2937),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Welcome, ${widget.name}!\nYour account has been successfully created.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Continue button
+                  Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00A36C)
+                              .withValues(alpha: 0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: widget.onContinue,
+                        borderRadius: BorderRadius.circular(28),
+                        child: const Center(
+                          child: Text(
+                            'Get Started',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -425,3 +694,4 @@ class _SignupProgressBar extends StatelessWidget {
     );
   }
 }
+

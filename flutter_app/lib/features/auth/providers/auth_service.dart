@@ -33,50 +33,48 @@ class AuthService {
       final String uid = cred.user!.uid;
       await cred.user!.updateDisplayName(name);
 
-      try {
-        await _firestore.collection('users').doc(uid).set({
-          'uid': uid,
-          'name': name,
-          'email': email,
-          'role': role,
-          'phone': phone ?? '',
-          'dateOfBirth': dateOfBirth ?? '',
-          'gender': gender ?? '',
-          'address': address ?? '',
-          'status': 'active',
-          'authProvider': 'email',
-          'profilePhotoUrl': '',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+      final String nowIso = DateTime.now().toIso8601String();
 
-        if (role == 'patient') {
-          await _firestore.collection('patients').doc(uid).set({
-            'patientId': uid,
-            'name': name,
-            'deviceId': '',
-            'faceEnrollmentStatus': 'pending',
-            'adherencePercent': 0,
-            'caregiverIds': [],
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        } else if (role == 'caregiver') {
-          await _firestore.collection('caregivers').doc(uid).set({
-            'caregiverId': uid,
-            'name': name,
-            'patientIds': [],
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      } catch (_) {
-        // Fallback: If Firestore rules temporarily reject writes, Auth creation succeeded
+      await _firestore.collection('users').doc(uid).set({
+        'uid': uid,
+        'name': name,
+        'email': email,
+        'role': role,
+        'phone': phone ?? '',
+        'dateOfBirth': dateOfBirth ?? '',
+        'gender': gender ?? '',
+        'address': address ?? '',
+        'status': 'active',
+        'authProvider': 'email',
+        'profilePhotoUrl': '',
+        'createdAt': nowIso,
+        'updatedAt': nowIso,
+      }, SetOptions(merge: true));
+
+      if (role == 'patient') {
+        await _firestore.collection('patients').doc(uid).set({
+          'patientId': uid,
+          'name': name,
+          'deviceId': '',
+          'faceEnrollmentStatus': 'pending',
+          'adherencePercent': 0,
+          'caregiverIds': [],
+          'createdAt': nowIso,
+        }, SetOptions(merge: true));
+      } else if (role == 'caregiver') {
+        await _firestore.collection('caregivers').doc(uid).set({
+          'caregiverId': uid,
+          'name': name,
+          'patientIds': [],
+          'createdAt': nowIso,
+        }, SetOptions(merge: true));
       }
 
       return null;
     } on FirebaseAuthException catch (e) {
       return e.message ?? 'Registration failed';
     } catch (e) {
-      return e.toString();
+      return 'Account created, but Firestore error: ${e.toString()}';
     }
   }
 
@@ -229,6 +227,8 @@ class AuthService {
     String authProvider = 'google',
   }) async {
     try {
+      final String nowIso = DateTime.now().toIso8601String();
+
       await _firestore.collection('users').doc(uid).set({
         'uid': uid,
         'name': name,
@@ -241,9 +241,9 @@ class AuthService {
         'status': 'active',
         'authProvider': authProvider,
         'profilePhotoUrl': profilePhotoUrl ?? '',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+        'createdAt': nowIso,
+        'updatedAt': nowIso,
+      }, SetOptions(merge: true));
 
       if (role == 'patient') {
         await _firestore.collection('patients').doc(uid).set({
@@ -253,15 +253,15 @@ class AuthService {
           'faceEnrollmentStatus': 'pending',
           'adherencePercent': 0,
           'caregiverIds': [],
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+          'createdAt': nowIso,
+        }, SetOptions(merge: true));
       } else if (role == 'caregiver') {
         await _firestore.collection('caregivers').doc(uid).set({
           'caregiverId': uid,
           'name': name,
           'patientIds': [],
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+          'createdAt': nowIso,
+        }, SetOptions(merge: true));
       }
 
       return null;

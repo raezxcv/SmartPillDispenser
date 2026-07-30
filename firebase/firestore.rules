@@ -1,0 +1,212 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helper functions
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// True when the request comes from a signed-in user.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    /// True when the caller's UID matches the given uid.
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    /// True when the caller holds the admin custom claim (set server-side only).
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    /// Returns the caller's user document.
+    function callerDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    /// True when the caller's role field matches the given role string.
+    function hasRole(role) {
+      return isAuthenticated() && callerDoc().data.role == role;
+    }
+
+    /// True when the caller is a caregiver and the given patientId is in their
+    /// linkedPatientIds array.
+    function isLinkedCaregiver(patientId) {
+      return hasRole('caregiver')
+          && patientId in callerDoc().data.linkedPatientIds;
+    }
+
+    /// True when the caller is the patient whose UID matches patientId.
+    function isPatient(patientId) {
+      return hasRole('patient') && request.auth.uid == patientId;
+    }
+
+    /// True when the caller is either the patient themselves OR a linked caregiver.
+    function canAccessPatient(patientId) {
+      return isPatient(patientId) || isLinkedCaregiver(patientId);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // users/{uid}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      // A user may read and update their own document.
+      // Admins can read any user document (e.g. for User Management screen).
+      // Creation is allowed by the owner at sign-up time.
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      // Deletion is admin-only (suspend = status field update, not delete).
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // patients/{patientId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /patients/{patientId} {
+      // Patient reads their own profile; caregivers read linked patients.
+      allow read: if canAccessPatient(patientId) || isAdmin();
+
+      // Caregivers may update patient profile fields they are responsible for
+      // (e.g. faceEnrollmentStatus signal). Patients may update their own doc
+      // for fields they own (photoUrl etc.). Admins may update anything.
+      allow update: if canAccessPatient(patientId) || isAdmin();
+
+      // Creation and deletion are admin-only (patient accounts are created
+      // as part of device provisioning by an admin or Cloud Function).
+      allow create, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // devices/{deviceId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /devices/{deviceId} {
+      // Linked patient and their caregivers may read device status.
+      // Admins may read all devices.
+      allow read: if isAdmin() || (
+        isAuthenticated() &&
+        exists(/databases/$(database)/documents/patients/$(resource.data.patientId)) &&
+        canAccessPatient(resource.data.patientId)
+      );
+
+      // No client writes — all hardware fields are written by firmware or
+      // Cloud Functions. The ONLY client-writable action is a caregiver
+      // confirming the tray is cleared (trayStatus field only).
+      // This is enforced by restricting writes to just that field for caregivers.
+      allow update: if isAdmin() || (
+        isLinkedCaregiver(resource.data.patientId) &&
+        request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['trayStatus', 'trayBlockedSince', 'trayBlockedReason'])
+      );
+
+      // Create and delete are admin-only (device provisioning).
+      allow create, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // schedules/{scheduleId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /schedules/{scheduleId} {
+      // Read: patient reads own schedules; caregivers read linked patient schedules.
+      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
+
+      // Write: only caregivers may create/update/delete schedules (patient view is read-only).
+      allow create: if (
+        isLinkedCaregiver(request.resource.data.patientId) ||
+        isAdmin()
+      );
+      allow update: if (
+        isLinkedCaregiver(resource.data.patientId) ||
+        isAdmin()
+      );
+      allow delete: if (
+        isLinkedCaregiver(resource.data.patientId) ||
+        isAdmin()
+      );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // dispenseEvents/{eventId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /dispenseEvents/{eventId} {
+      // Read-only for patient and linked caregivers; admins can read all.
+      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
+
+      // No client writes — written exclusively by firmware and Cloud Functions.
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // emergencyRequests/{requestId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /emergencyRequests/{requestId} {
+      // Read: patient or linked caregiver.
+      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
+
+      // Create: patient may create patient-initiated requests;
+      // caregiver may create caregiver-initiated requests for linked patients.
+      allow create: if (
+        isAuthenticated() && (
+          // Patient-initiated: caller is the patient
+          (isPatient(request.resource.data.patientId) &&
+           request.resource.data.initiatedBy == 'patient') ||
+          // Caregiver-initiated: caller is a linked caregiver, compartment required
+          (isLinkedCaregiver(request.resource.data.patientId) &&
+           request.resource.data.initiatedBy == 'caregiver' &&
+           request.resource.data.compartment != null)
+        )
+      );
+
+      // Update/delete: admin or Cloud Function only (status transitions).
+      allow update, delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // callSessions/{sessionId}  — WebRTC signaling
+    // ─────────────────────────────────────────────────────────────────────────
+    match /callSessions/{sessionId} {
+      // Linked patient and caregivers read/write for signaling exchange.
+      allow read, write: if canAccessPatient(resource.data.patientId) || isAdmin();
+
+      // Allow creating a new session (resource won't exist yet for create check).
+      allow create: if canAccessPatient(request.resource.data.patientId) || isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // systemLogs/{logId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /systemLogs/{logId} {
+      // Admin read-only. No client writes — written by Cloud Functions only.
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // firmwareUpdates/{updateId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /firmwareUpdates/{updateId} {
+      // Admin read-only. Writes go through firmwareAction Cloud Function.
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // adminUsers/{uid}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /adminUsers/{uid} {
+      // Admins read the directory; no client writes — managed by setAdminClaim CF.
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Deny everything else by default.
+    // ─────────────────────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

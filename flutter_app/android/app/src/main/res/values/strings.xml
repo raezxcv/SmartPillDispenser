@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart Pill Dispenser</string>
+
+    <!--
+        Facebook App ID & Client Token.
+        Replace these placeholder values with your real Facebook App ID and Client Token
+        from https://developers.facebook.com/apps after creating a Facebook App.
+
+        Steps:
+        1. Go to https://developers.facebook.com/apps and create a new app.
+        2. Add the Android platform under Settings > Basic.
+        3. Copy your App ID (e.g. "1234567890123456") and paste below.
+        4. Copy your Client Token from Settings > Advanced and paste below.
+        5. Your fb_login_protocol_scheme is "fb" + your App ID (e.g. "fb1234567890123456").
+    -->
+    <string name="facebook_app_id">REPLACE_WITH_YOUR_FACEBOOK_APP_ID</string>
+    <string name="facebook_client_token">REPLACE_WITH_YOUR_FACEBOOK_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme">fbREPLACE_WITH_YOUR_FACEBOOK_APP_ID</string>
+</resources>

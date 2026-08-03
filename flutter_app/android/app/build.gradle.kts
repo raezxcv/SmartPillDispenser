@@ -18,6 +18,7 @@ android {
     namespace = "com.smartpilldispenser.smart_pill_dispenser"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
+    ndkPath = "C:/Users/User/AppData/Local/Android/Sdk/ndk/28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -46,6 +47,9 @@ android {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
-name: smart_pill_dispenser
-description: Smart Pill Dispenser — Android-first patient & caregiver medication management app.
+name: smartdose
+description: SmartDose — Android-first patient & caregiver medication management app.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -37,6 +37,8 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.4.0
   uuid: ^4.6.0
+  google_fonts: ^8.2.1
+  lucide_icons_flutter: ^3.1.15
   # flutter_webrtc removed temporarily — plugin has compileSdk conflict (API 31 vs 34)
   # Re-add when plugin fixes: https://github.com/flutter-webrtc/flutter-webrtc/issues
 
@@ -49,15 +51,16 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/Smart Pill Dispenser App Logo.png"
+  image_path: "assets/Smart Dose App Logo.png"
   min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/Smart Pill Dispenser App Logo.png"
+    image_path: "assets/Smart Dose App Logo.png"
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/Smart Pill Dispenser Logo.png
-    - assets/Smart Pill Dispenser App Logo.png
+    - assets/Smart Dose Logo.png
+    - assets/Smart Dose App Logo.png
+    - assets/Smart Dose Logo No Bg.png

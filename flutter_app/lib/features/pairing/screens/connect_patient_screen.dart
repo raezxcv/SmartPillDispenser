@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/pairing_service.dart';
@@ -299,7 +299,7 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'To scan QR codes and connect to patients, Smart Pill Dispenser needs camera access.',
+                'To scan QR codes and connect to patients, SmartDose needs camera access.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF), height: 1.4),
               ),

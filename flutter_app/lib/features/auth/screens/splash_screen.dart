@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// SplashScreen — App loader screen with lighter, vibrant green gradient background.
 class SplashScreen extends StatefulWidget {
@@ -100,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/Smart Pill Dispenser Logo.png',
+                        'assets/Smart Dose Logo.png',
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -109,12 +110,12 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 28),
 
                   // App Title
-                  const Text(
-                    'Smart Pill Dispenser',
-                    style: TextStyle(
+                  Text(
+                    'SmartDose',
+                    style: GoogleFonts.manrope(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF1F2937),
+                      color: const Color(0xFF1F2937),
                       letterSpacing: -0.5,
                     ),
                   ),

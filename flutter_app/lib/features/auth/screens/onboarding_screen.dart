@@ -181,7 +181,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                         // Title
                         const Text(
-                          'Smart Pill Dispenser',
+                          'SmartDose',
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.w900,
@@ -238,7 +238,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       child: step.useLogo
                                           ? ClipOval(
                                               child: Image.asset(
-                                                'assets/Smart Pill Dispenser Logo.png',
+                                                'assets/Smart Dose Logo.png',
                                                 fit: BoxFit.cover,
                                                 width: 100,
                                                 height: 100,

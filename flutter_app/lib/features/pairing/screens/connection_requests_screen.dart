@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/pairing_service.dart';
@@ -83,7 +83,7 @@ class _ConnectionRequestsScreenState extends State<ConnectionRequestsScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '$caregiverName is now connected to your Smart Pill Dispenser account.',
+                    '$caregiverName is now connected to your SmartDose account.',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.4),
                   ),

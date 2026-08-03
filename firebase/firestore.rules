@@ -68,16 +68,86 @@ service cloud.firestore {
     // ─────────────────────────────────────────────────────────────────────────
     match /patients/{patientId} {
       // Patient reads their own profile; caregivers read linked patients.
-      allow read: if canAccessPatient(patientId) || isAdmin();
+      allow read: if isOwner(patientId) || isAdmin();
+
+      // Patient may create their own doc at sign-up time.
+      allow create: if isOwner(patientId) || isAdmin();
 
       // Caregivers may update patient profile fields they are responsible for
       // (e.g. faceEnrollmentStatus signal). Patients may update their own doc
       // for fields they own (photoUrl etc.). Admins may update anything.
-      allow update: if canAccessPatient(patientId) || isAdmin();
+      allow update: if isOwner(patientId) || isAdmin();
 
-      // Creation and deletion are admin-only (patient accounts are created
-      // as part of device provisioning by an admin or Cloud Function).
-      allow create, delete: if isAdmin();
+      // Deletion is admin-only.
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // caregivers/{caregiverId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /caregivers/{caregiverId} {
+      // Caregiver reads their own profile.
+      allow read: if isOwner(caregiverId) || isAdmin();
+
+      // Caregiver may create their own doc at sign-up time.
+      allow create: if isOwner(caregiverId) || isAdmin();
+
+      // Caregiver may update their own doc.
+      allow update: if isOwner(caregiverId) || isAdmin();
+
+      // Deletion is admin-only.
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // pairing_tokens/{tokenId}  — QR pairing tokens
+    // ─────────────────────────────────────────────────────────────────────────
+    match /pairing_tokens/{tokenId} {
+      // Any authenticated user can read tokens (to validate scanned QR codes).
+      allow read: if isAuthenticated();
+
+      // Patients create their own pairing tokens.
+      allow create: if isAuthenticated();
+
+      // Tokens may be updated (e.g. marking isUsed = true) by authenticated users.
+      allow update: if isAuthenticated();
+
+      // Deletion: admin only.
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // pairing_requests/{requestId}  — Caregiver→Patient connection requests
+    // ─────────────────────────────────────────────────────────────────────────
+    match /pairing_requests/{requestId} {
+      // The patient (target) and the caregiver (sender) can read the request.
+      allow read: if isAuthenticated();
+
+      // Any authenticated user can create a pairing request.
+      allow create: if isAuthenticated();
+
+      // Patient approves/rejects; caregiver can cancel.
+      allow update: if isAuthenticated();
+
+      // Deletion: admin only.
+      allow delete: if isAdmin();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // pairings/{pairingId}  — Active patient–caregiver connections
+    // ─────────────────────────────────────────────────────────────────────────
+    match /pairings/{pairingId} {
+      // Both patient and caregiver in the pairing can read.
+      allow read: if isAuthenticated();
+
+      // Created when patient approves a pairing request.
+      allow create: if isAuthenticated();
+
+      // Either party or admin can update (role changes, last active, etc.).
+      allow update: if isAuthenticated();
+
+      // Patient or admin can remove pairing.
+      allow delete: if isAuthenticated();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -95,7 +165,6 @@ service cloud.firestore {
       // No client writes — all hardware fields are written by firmware or
       // Cloud Functions. The ONLY client-writable action is a caregiver
       // confirming the tray is cleared (trayStatus field only).
-      // This is enforced by restricting writes to just that field for caregivers.
       allow update: if isAdmin() || (
         isLinkedCaregiver(resource.data.patientId) &&
         request.resource.data.diff(resource.data).affectedKeys()
@@ -113,7 +182,7 @@ service cloud.firestore {
       // Read: patient reads own schedules; caregivers read linked patient schedules.
       allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
 
-      // Write: only caregivers may create/update/delete schedules (patient view is read-only).
+      // Write: only caregivers may create/update/delete schedules.
       allow create: if (
         isLinkedCaregiver(request.resource.data.patientId) ||
         isAdmin()
@@ -150,17 +219,15 @@ service cloud.firestore {
       // caregiver may create caregiver-initiated requests for linked patients.
       allow create: if (
         isAuthenticated() && (
-          // Patient-initiated: caller is the patient
           (isPatient(request.resource.data.patientId) &&
            request.resource.data.initiatedBy == 'patient') ||
-          // Caregiver-initiated: caller is a linked caregiver, compartment required
           (isLinkedCaregiver(request.resource.data.patientId) &&
            request.resource.data.initiatedBy == 'caregiver' &&
            request.resource.data.compartment != null)
         )
       );
 
-      // Update/delete: admin or Cloud Function only (status transitions).
+      // Update/delete: admin or Cloud Function only.
       allow update, delete: if isAdmin();
     }
 
@@ -168,10 +235,7 @@ service cloud.firestore {
     // callSessions/{sessionId}  — WebRTC signaling
     // ─────────────────────────────────────────────────────────────────────────
     match /callSessions/{sessionId} {
-      // Linked patient and caregivers read/write for signaling exchange.
       allow read, write: if canAccessPatient(resource.data.patientId) || isAdmin();
-
-      // Allow creating a new session (resource won't exist yet for create check).
       allow create: if canAccessPatient(request.resource.data.patientId) || isAdmin();
     }
 
@@ -179,7 +243,6 @@ service cloud.firestore {
     // systemLogs/{logId}
     // ─────────────────────────────────────────────────────────────────────────
     match /systemLogs/{logId} {
-      // Admin read-only. No client writes — written by Cloud Functions only.
       allow read: if isAdmin();
       allow write: if false;
     }
@@ -188,7 +251,6 @@ service cloud.firestore {
     // firmwareUpdates/{updateId}
     // ─────────────────────────────────────────────────────────────────────────
     match /firmwareUpdates/{updateId} {
-      // Admin read-only. Writes go through firmwareAction Cloud Function.
       allow read: if isAdmin();
       allow write: if false;
     }
@@ -197,7 +259,6 @@ service cloud.firestore {
     // adminUsers/{uid}
     // ─────────────────────────────────────────────────────────────────────────
     match /adminUsers/{uid} {
-      // Admins read the directory; no client writes — managed by setAdminClaim CF.
       allow read: if isAdmin();
       allow write: if false;
     }

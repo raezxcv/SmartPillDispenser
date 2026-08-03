@@ -11,6 +11,58 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // ─── Error Helpers ────────────────────────────────────────────────────────
+
+  /// Converts Firebase Auth error codes into friendly messages.
+  static String _friendlyAuthError(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with this email. Please check and try again.';
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password. Please try again.';
+      case 'invalid-email':
+        return 'The email address is not valid. Please check and try again.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'email-already-in-use':
+        return 'An account with this email already exists. Try logging in instead.';
+      case 'weak-password':
+        return 'Password is too weak. Use at least 8 characters with letters and numbers.';
+      case 'operation-not-allowed':
+        return 'This sign-in method is not enabled. Please contact support.';
+      case 'too-many-requests':
+        return 'Too many failed attempts. Please wait a moment and try again.';
+      case 'network-request-failed':
+        return 'No internet connection. Please check your network and try again.';
+      case 'requires-recent-login':
+        return 'For security, please log out and log back in to continue.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with this email using a different sign-in method.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
+  }
+
+  /// Converts Firestore / generic errors into friendly messages.
+  static String _friendlyGenericError(Object e) {
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('permission-denied') || msg.contains('permission denied')) {
+      return 'Your account was created, but we could not save your profile. '
+          'Please log in — your profile will sync automatically.';
+    }
+    if (msg.contains('network') || msg.contains('unavailable') || msg.contains('failed to connect')) {
+      return 'No internet connection. Please check your network and try again.';
+    }
+    if (msg.contains('timeout')) {
+      return 'The request timed out. Please check your connection and try again.';
+    }
+    if (msg.contains('not-found') || msg.contains('not found')) {
+      return 'Your profile could not be found. Please try logging in again.';
+    }
+    return 'Something went wrong. Please try again later.';
+  }
+
   // ─── Sign Up ──────────────────────────────────────────────────────────────
 
   /// Sign Up new user with full personal profile.
@@ -72,9 +124,9 @@ class AuthService {
 
       return null;
     } on FirebaseAuthException catch (e) {
-      return e.message ?? 'Registration failed';
+      return _friendlyAuthError(e.code);
     } catch (e) {
-      return 'Account created, but Firestore error: ${e.toString()}';
+      return _friendlyGenericError(e);
     }
   }
 
@@ -108,8 +160,10 @@ class AuthService {
         'email': email,
         'role': 'patient',
       };
+    } on FirebaseAuthException catch (e) {
+      throw Exception(_friendlyAuthError(e.code));
     } catch (e) {
-      rethrow;
+      throw Exception(_friendlyGenericError(e));
     }
   }
 
@@ -147,9 +201,9 @@ class AuthService {
         };
       }
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'Google sign-in failed');
+      throw Exception(_friendlyAuthError(e.code));
     } catch (e) {
-      rethrow;
+      throw Exception(_friendlyGenericError(e));
     }
   }
 
@@ -206,9 +260,9 @@ class AuthService {
         };
       }
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.message ?? 'Facebook sign-in failed');
+      throw Exception(_friendlyAuthError(e.code));
     } catch (e) {
-      rethrow;
+      throw Exception(_friendlyGenericError(e));
     }
   }
 
@@ -265,8 +319,10 @@ class AuthService {
       }
 
       return null;
+    } on FirebaseAuthException catch (e) {
+      return _friendlyAuthError(e.code);
     } catch (e) {
-      return e.toString();
+      return _friendlyGenericError(e);
     }
   }
 

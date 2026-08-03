@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   final Function(String role) onRoleSelected;
@@ -34,7 +34,7 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Smart Pill Dispenser',
+                'SmartDose',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,

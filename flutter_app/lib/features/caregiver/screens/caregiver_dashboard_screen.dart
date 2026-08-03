@@ -19,15 +19,20 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     const emerald = Color(0xFF10B981);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBgColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Caregiver Portal',
-          style: TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold),
+          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -53,9 +58,9 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Connected Patients List / Overview Header
-            const Text(
+            Text(
               'Connected Patients',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor),
             ),
             const SizedBox(height: 12),
 
@@ -76,17 +81,17 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                         return Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: cardBgColor,
                             borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                            border: Border.all(color: theme.dividerColor),
                           ),
                           child: Row(
                             children: [
                               Container(
                                 width: 48,
                                 height: 48,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFECFDF5),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.person_add_alt_1_rounded, color: emerald),
@@ -96,14 +101,14 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'No Connected Patients Yet',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryTextColor),
                                     ),
                                     const SizedBox(height: 2),
-                                    const Text(
+                                    Text(
                                       'Scan a patient\'s QR code to connect and manage their dispenser.',
-                                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
                                     ),
                                   ],
                                 ),
@@ -136,10 +141,10 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: cardBgColor,
                               borderRadius: BorderRadius.circular(22),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10),
+                                BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 10),
                               ],
                             ),
                             child: Row(
@@ -147,8 +152,8 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                                 Container(
                                   width: 50,
                                   height: 50,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFD1FAE5),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
                                     shape: BoxShape.circle,
                                   ),
                                   alignment: Alignment.center,
@@ -162,14 +167,14 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(patientName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
-                                      Text('$relationship · Dispenser M2 · Adherence: 96%', style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                                      Text(patientName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor)),
+                                      Text('$relationship · Dispenser M2 · Adherence: 96%', style: TextStyle(fontSize: 13, color: secondaryTextColor)),
                                     ],
                                   ),
                                 ),
-                                const Chip(
-                                  label: Text('Connected', style: TextStyle(color: emerald, fontSize: 12, fontWeight: FontWeight.bold)),
-                                  backgroundColor: Color(0xFFD1FAE5),
+                                Chip(
+                                  label: const Text('Connected', style: TextStyle(color: emerald, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  backgroundColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
                                 ),
                               ],
                             ),
@@ -181,7 +186,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
 
             const SizedBox(height: 20),
 
-            const Text('Caregiver Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+            Text('Caregiver Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor)),
             const SizedBox(height: 12),
 
             // Connect Patient Action Tile (Emerald QR Code Scanner)
@@ -196,7 +201,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
+                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: emerald.withValues(alpha: 0.3)),
                   boxShadow: [
@@ -206,25 +211,25 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
                         color: emerald,
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 28),
+                      child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 28),
                     ),
-                    SizedBox(width: 16),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Connect to Patient', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF065F46))),
-                          SizedBox(height: 2),
-                          Text('Scan patient\'s QR code or enter pairing code', style: TextStyle(fontSize: 13, color: Color(0xFF047857))),
+                          Text('Connect to Patient', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : const Color(0xFF065F46))),
+                          const SizedBox(height: 2),
+                          Text('Scan patient\'s QR code or enter pairing code', style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : const Color(0xFF047857))),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded, size: 18, color: emerald),
+                    const Icon(Icons.arrow_forward_ios_rounded, size: 18, color: emerald),
                   ],
                 ),
               ),
@@ -254,35 +259,41 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
   }
 
   Widget _buildSamplePatientCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBgColor,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10),
+          BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 10),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
           CircleAvatar(
             radius: 25,
-            backgroundColor: Color(0xFFD1FAE5),
-            child: Text('MD', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 18)),
+            backgroundColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
+            child: const Text('MD', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 18)),
           ),
-          SizedBox(width: 14),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Maria Delgado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
-                Text('Dispenser M2 · Adherence: 94%', style: TextStyle(fontSize: 13, color: Color(0xFF6B7280))),
+                Text('Maria Delgado', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor)),
+                Text('Dispenser M2 · Adherence: 94%', style: TextStyle(fontSize: 13, color: secondaryTextColor)),
               ],
             ),
           ),
           Chip(
-            label: Text('Tray Clear', style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
-            backgroundColor: Color(0xFFD1FAE5),
+            label: const Text('Tray Clear', style: TextStyle(color: Color(0xFF10B981), fontSize: 12, fontWeight: FontWeight.bold)),
+            backgroundColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
           ),
         ],
       ),
@@ -290,13 +301,18 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
   }
 
   Widget _buildActionTile(IconData icon, String label, MaterialColor color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBgColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8),
+          BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 8),
         ],
       ),
       child: Column(
@@ -304,7 +320,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         children: [
           Icon(icon, color: color, size: 28),
           const SizedBox(height: 12),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1F2937))),
+          Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: primaryTextColor)),
         ],
       ),
     );

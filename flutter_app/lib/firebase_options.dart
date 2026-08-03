@@ -1,4 +1,4 @@
-// File generated with real project options from google-services.json
+﻿// File generated with real project options from google-services.json
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '757028886151',
     projectId: 'smart-pill-dispenser-baa02',
     storageBucket: 'smart-pill-dispenser-baa02.firebasestorage.app',
-    iosBundleId: 'com.smartpilldispenser.app',
+    iosBundleId: 'com.SmartDose.app',
   );
 
   static const FirebaseOptions macOS = FirebaseOptions(
@@ -62,7 +62,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '757028886151',
     projectId: 'smart-pill-dispenser-baa02',
     storageBucket: 'smart-pill-dispenser-baa02.firebasestorage.app',
-    iosBundleId: 'com.smartpilldispenser.app',
+    iosBundleId: 'com.SmartDose.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

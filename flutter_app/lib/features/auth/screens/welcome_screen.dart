@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// WelcomeScreen — Centered intro screen with entrance animations and green gradient.
 class WelcomeScreen extends StatefulWidget {
@@ -96,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/Smart Pill Dispenser Logo.png',
+                          'assets/Smart Dose Logo.png',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -105,10 +107,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     const SizedBox(height: 24),
 
                     // App Name Title
-                    const Text(
-                      'Smart Pill Dispenser',
+                    Text(
+                      'SmartDose',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: GoogleFonts.manrope(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -147,14 +149,11 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _buildCompactPill(
-                            Icons.medication_liquid_rounded, 'Dispensing'),
+                        _buildCompactPill(LucideIcons.pill, 'Dispensing'),
                         const SizedBox(width: 8),
-                        _buildCompactPill(
-                            Icons.notifications_active_rounded, 'Reminders'),
+                        _buildCompactPill(LucideIcons.bell, 'Reminders'),
                         const SizedBox(width: 8),
-                        _buildCompactPill(
-                            Icons.favorite_rounded, 'Caregiver'),
+                        _buildCompactPill(LucideIcons.heart, 'Caregiver'),
                       ],
                     ),
 
@@ -164,7 +163,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     SizedBox(
                       width: double.infinity,
                       height: 56,
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: widget.onGetStarted,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -174,7 +173,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                        child: const Text(
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 20),
+                        label: const Text(
                           'Get started',
                           style: TextStyle(
                             fontSize: 17,
@@ -192,7 +192,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.verified_user_outlined,
+                          LucideIcons.shieldCheck,
                           size: 16,
                           color: Colors.white.withValues(alpha: 0.8),
                         ),

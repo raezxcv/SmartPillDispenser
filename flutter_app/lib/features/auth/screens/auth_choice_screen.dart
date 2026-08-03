@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// AuthChoiceScreen — Landing screen with staggered component animations.
+/// AuthChoiceScreen — Landing screen with Top Hero Banner, Overlapping White Card,
+/// extra thick typography, and key-round icon for login button.
 class AuthChoiceScreen extends StatefulWidget {
   final VoidCallback onLogin;
   final VoidCallback onSignup;
@@ -34,6 +36,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
   late Animation<double> _subtitleFade;
   late Animation<double> _btnFade;
   late Animation<Offset> _btnSlide;
+  // ignore: unused_field
   late Animation<double> _socialFade;
 
   @override
@@ -44,8 +47,8 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
       duration: const Duration(milliseconds: 900),
     );
 
-    _logoFade = _interval(0.0, 0.35);
-    _logoSlide = _slideInterval(0.0, 0.40);
+    _logoFade = _interval(0.0, 0.40);
+    _logoSlide = _slideInterval(0.0, 0.45);
     _titleFade = _interval(0.20, 0.55);
     _titleSlide = _slideInterval(0.20, 0.55);
     _subtitleFade = _interval(0.35, 0.65);
@@ -56,20 +59,20 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
     _ctrl.forward();
   }
 
-  Animation<double> _interval(double begin, double end) =>
-      CurvedAnimation(
+  Animation<double> _interval(double begin, double end) => CurvedAnimation(
         parent: _ctrl,
         curve: Interval(begin, end, curve: Curves.easeOut),
       );
 
   Animation<Offset> _slideInterval(double begin, double end) =>
-      Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(
+      Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
         CurvedAnimation(
           parent: _ctrl,
           curve: Interval(begin, end, curve: Curves.easeOutCubic),
         ),
       );
 
+  // ignore: unused_element
   Future<void> _tapGoogle() async {
     if (_isGoogleLoading || _isFacebookLoading) return;
     setState(() => _isGoogleLoading = true);
@@ -80,6 +83,7 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
     }
   }
 
+  // ignore: unused_element
   Future<void> _tapFacebook() async {
     if (_isGoogleLoading || _isFacebookLoading) return;
     setState(() => _isFacebookLoading = true);
@@ -98,222 +102,224 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final heroHeight = size.height * 0.36;
+
     return Scaffold(
-      body: Container(
+      backgroundColor: const Color(0xFF00754C),
+      body: SizedBox(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFC5F2DC),
-              Color(0xFFE8F8F0),
-              Color(0xFFFFFFFF),
-            ],
-            stops: [0.0, 0.42, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              children: [
-                const Spacer(),
-
-                // Logo — staggered fade + slide
-                FadeTransition(
-                  opacity: _logoFade,
-                  child: SlideTransition(
-                    position: _logoSlide,
+        child: Column(
+          children: [
+            // ── Top Hero Banner (Green Gradient + Floating Logo) ───────────
+            SizedBox(
+              height: heroHeight,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  // Gradient Background
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF006842),
+                          Color(0xFF00A36C),
+                          Color(0xFF00C882),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Decorative Ambient Shapes
+                  Positioned(
+                    top: -30,
+                    right: -30,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 10,
+                    left: -20,
                     child: Container(
                       width: 110,
                       height: 110,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00A36C),
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00A36C).withValues(alpha: 0.3),
-                            blurRadius: 26,
-                            offset: const Offset(0, 10),
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                  ),
+                  // Logo Badge — Staggered Fade & Slide
+                  Center(
+                    child: FadeTransition(
+                      opacity: _logoFade,
+                      child: SlideTransition(
+                        position: _logoSlide,
+                        child: Container(
+                          width: 108,
+                          height: 108,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.22),
+                                blurRadius: 28,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/Smart Pill Dispenser Logo.png',
-                          fit: BoxFit.cover,
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/Smart Dose Logo.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                ],
+              ),
+            ),
 
-                // Title — staggered
-                FadeTransition(
-                  opacity: _titleFade,
-                  child: SlideTransition(
-                    position: _titleSlide,
-                    child: const Text(
-                      'Smart Pill Dispenser',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1F2937),
-                        letterSpacing: -0.5,
-                      ),
+            // ── Bottom Overlapping White Sheet ─────────────────────────────
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 24,
+                      offset: Offset(0, -6),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-
-                // Subtitle — staggered
-                FadeTransition(
-                  opacity: _subtitleFade,
-                  child: const Column(
-                    children: [
-                      Text(
-                        'Your smart medication companion',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF00A36C),
-                        ),
-                      ),
-                      SizedBox(height: 6),
-                      Text(
-                        'Sign in or create an account to manage your medication schedule effortlessly.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.4,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Buttons — staggered
-                FadeTransition(
-                  opacity: _btnFade,
-                  child: SlideTransition(
-                    position: _btnSlide,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
                     child: Column(
                       children: [
-                        // Log in
-                        _GradientButton(
-                          text: 'Log in',
-                          onPressed: widget.onLogin,
-                        ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
 
-                        // Create an account
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: OutlinedButton(
-                            onPressed: widget.onSignup,
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF00A36C),
-                              side: const BorderSide(
-                                color: Color(0xFF00A36C),
-                                width: 1.5,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(28),
-                              ),
-                            ),
+                        // Title — Thick Heavy Weight
+                        FadeTransition(
+                          opacity: _titleFade,
+                          child: SlideTransition(
+                            position: _titleSlide,
                             child: const Text(
-                              'Create an account',
+                              'SmartDose',
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF00A36C),
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF1F2937),
+                                letterSpacing: -0.6,
                               ),
                             ),
                           ),
                         ),
+                        const SizedBox(height: 8),
+
+                        // Subtitle — Thick Medium Weight
+                        FadeTransition(
+                          opacity: _subtitleFade,
+                          child: const Column(
+                            children: [
+                              Text(
+                                'Your smart medication companion',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF00A36C),
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Sign in or create an account to manage your medication schedule effortlessly.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.45,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const Spacer(),
+
+                        // Action Buttons — Staggered Slide
+                        FadeTransition(
+                          opacity: _btnFade,
+                          child: SlideTransition(
+                            position: _btnSlide,
+                            child: Column(
+                              children: [
+                                // Log in with KeyRound Icon
+                                _GradientButton(
+                                  text: 'Log in',
+                                  icon: LucideIcons.keyRound,
+                                  onPressed: widget.onLogin,
+                                ),
+                                const SizedBox(height: 14),
+
+                                // Create an account
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: OutlinedButton.icon(
+                                    onPressed: widget.onSignup,
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF00A36C),
+                                      side: const BorderSide(
+                                        color: Color(0xFF00A36C),
+                                        width: 2.0,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(28),
+                                      ),
+                                    ),
+                                    icon: const Icon(Icons.person_add_rounded, size: 22),
+                                    label: const Text(
+                                      'Create an account',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFF00A36C),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 28),
-
-                // Social Section — staggered
-                FadeTransition(
-                  opacity: _socialFade,
-                  child: Column(
-                    children: [
-                      // Divider
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Divider(
-                                color: Color(0xFFD1D5DB), thickness: 1),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              'or sign in with',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          const Expanded(
-                            child: Divider(
-                                color: Color(0xFFD1D5DB), thickness: 1),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Social buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _CircularSocialButton(
-                            isLoading: _isGoogleLoading,
-                            onTap: _tapGoogle,
-                            child: SizedBox(
-                              width: 26,
-                              height: 26,
-                              child: CustomPaint(painter: _GoogleLogoPainter()),
-                            ),
-                          ),
-                          const SizedBox(width: 20),
-                          _CircularSocialButton(
-                            isLoading: _isFacebookLoading,
-                            onTap: _tapFacebook,
-                            child: SizedBox(
-                              width: 26,
-                              height: 26,
-                              child:
-                                  CustomPaint(painter: _FacebookLogoPainter()),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -324,9 +330,10 @@ class _AuthChoiceScreenState extends State<AuthChoiceScreen>
 
 class _GradientButton extends StatelessWidget {
   final String text;
+  final IconData? icon;
   final VoidCallback? onPressed;
 
-  const _GradientButton({required this.text, required this.onPressed});
+  const _GradientButton({required this.text, this.icon, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -347,8 +354,8 @@ class _GradientButton extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                  color: const Color(0xFF00A36C).withValues(alpha: 0.35),
-                  blurRadius: 16,
+                  color: const Color(0xFF00A36C).withValues(alpha: 0.38),
+                  blurRadius: 18,
                   offset: const Offset(0, 6),
                 ),
               ],
@@ -358,12 +365,22 @@ class _GradientButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(28),
-          child: Center(
-            child: Text(text,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+              ],
+              Text(
+                text,
                 style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -373,6 +390,7 @@ class _GradientButton extends StatelessWidget {
 
 // ─── Circular Social Button ───────────────────────────────────────────────────
 
+// ignore: unused_element
 class _CircularSocialButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onTap;
@@ -417,6 +435,7 @@ class _CircularSocialButton extends StatelessWidget {
 
 // ─── Google SVG ───────────────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _GoogleLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -482,6 +501,7 @@ class _GoogleLogoPainter extends CustomPainter {
 
 // ─── Facebook SVG ─────────────────────────────────────────────────────────────
 
+// ignore: unused_element
 class _FacebookLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

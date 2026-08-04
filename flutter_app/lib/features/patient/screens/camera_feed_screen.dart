@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'patient_alerts_tab.dart';
 
 class CameraFeedScreen extends StatefulWidget {
   const CameraFeedScreen({super.key});
@@ -31,6 +32,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   void initState() {
     super.initState();
     _initDeviceStream();
+    _resetControlsTimer();
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) setState(() => _lastRefreshed = DateTime.now());
     });
@@ -85,6 +87,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
         _isFullscreen = false;
         _showControls = true;
       });
+      _resetControlsTimer();
     }
   }
 
@@ -155,7 +158,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _activityLogsStream {
     final uid = _uid;
     if (uid == null) return null;
-    // Try dispensingLogs collection — returns null stream on permission error
     return FirebaseFirestore.instance
         .collection('dispensingLogs')
         .where('patientUid', isEqualTo: uid)
@@ -172,25 +174,41 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     final cameraUrl = _deviceData?['latestSnapshotUrl'] as String?;
     final isOnline = _deviceData?['isOnline'] as bool? ?? false;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBgColor,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: Color(0xFF1F2937), size: 20),
+          icon: Icon(LucideIcons.arrowLeft, color: primaryTextColor, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Live Camera Feed',
           style: GoogleFonts.manrope(
-            color: const Color(0xFF1F2937),
+            color: primaryTextColor,
             fontWeight: FontWeight.w800,
             fontSize: 20,
           ),
         ),
         actions: [
+          IconButton(
+            icon: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+              );
+            },
+            tooltip: 'Notifications',
+          ),
           IconButton(
             icon: const Icon(LucideIcons.refreshCw, color: Color(0xFF00A36C), size: 20),
             onPressed: () => setState(() => _lastRefreshed = DateTime.now()),
@@ -199,171 +217,206 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       ),
       body: Column(
         children: [
-          // ─── VIDEO BLOCK ───────────────────────────────────────────────────
-          Container(
-            height: 250,
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+          // ─── VIDEO BLOCK (Tap to toggle overlays in minimized mode) ────────
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _toggleControls,
+            child: Container(
+              height: 250,
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.black : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isDark ? Colors.transparent : const Color(0xFFE2E8F0),
+                  width: 1.5,
                 ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Stream image (fills box)
-                Positioned.fill(
-                  child: cameraUrl != null && cameraUrl.isNotEmpty
-                      ? Image.network(
-                          '$cameraUrl?t=${_lastRefreshed.millisecondsSinceEpoch}',
-                          fit: BoxFit.cover,
-                          loadingBuilder: (_, child, progress) => progress == null
-                              ? child
-                              : const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C))),
-                          errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline),
-                        )
-                      : _buildStreamPlaceholder(isOnline),
-                ),
-
-                // Top-left: LIVE badge
-                Positioned(
-                  top: 14,
-                  left: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE41E3F),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 7, height: 7,
-                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'LIVE',
-                          style: GoogleFonts.manrope(
-                            color: Colors.white, fontSize: 11,
-                            fontWeight: FontWeight.w900, letterSpacing: 1.0,
-                          ),
-                        ),
-                      ],
-                    ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
-                ),
-
-                // Top-right: Device status badge
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.60),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isOnline ? LucideIcons.wifi : LucideIcons.wifiOff,
-                          color: isOnline ? const Color(0xFF00C882) : Colors.grey,
-                          size: 13,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          isOnline ? 'Raspberry Pi · Online' : 'Standby',
-                          style: GoogleFonts.manrope(
-                            color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Stream image (fills box) / Adaptive placeholder
+                  Positioned.fill(
+                    child: cameraUrl != null && cameraUrl.isNotEmpty
+                        ? Image.network(
+                            '$cameraUrl?t=${_lastRefreshed.millisecondsSinceEpoch}',
+                            fit: BoxFit.cover,
+                            loadingBuilder: (_, child, progress) => progress == null
+                                ? child
+                                : const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C))),
+                            errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
+                          )
+                        : _buildStreamPlaceholder(isOnline, context),
                   ),
-                ),
 
-                // Bottom-left: Take Photo button
-                Positioned(
-                  bottom: 14,
-                  left: 14,
-                  child: GestureDetector(
-                    onTap: _isCapturing ? null : _requestCapture,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: _isCapturing
-                            ? const Color(0xFF00A36C).withValues(alpha: 0.7)
-                            : const Color(0xFF00A36C),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF00A36C).withValues(alpha: 0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                  // Animated Overlay Controls (Fades in/out on tap & auto-hide)
+                  AnimatedOpacity(
+                    opacity: _showControls ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 250),
+                    child: IgnorePointer(
+                      ignoring: !_showControls,
+                      child: Stack(
                         children: [
-                          _isCapturing
-                              ? const SizedBox(
-                                  width: 14, height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(LucideIcons.camera, size: 15, color: Colors.white),
-                          const SizedBox(width: 7),
-                          Text(
-                            _isCapturing ? 'Capturing…' : 'Take Photo',
-                            style: GoogleFonts.manrope(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Colors.white,
+                          // Top-left: LIVE badge
+                          Positioned(
+                            top: 14,
+                            left: 14,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE41E3F),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 7, height: 7,
+                                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'LIVE',
+                                    style: GoogleFonts.manrope(
+                                      color: Colors.white, fontSize: 11,
+                                      fontWeight: FontWeight.w900, letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Top-right: Device status badge (Adaptive light/dark mode)
+                          Positioned(
+                            top: 14,
+                            right: 14,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.black.withValues(alpha: 0.60)
+                                    : Colors.white.withValues(alpha: 0.90),
+                                borderRadius: BorderRadius.circular(20),
+                                border: isDark
+                                    ? null
+                                    : Border.all(color: const Color(0xFFE2E8F0)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.10),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isOnline ? LucideIcons.wifi : LucideIcons.wifiOff,
+                                    color: isOnline ? const Color(0xFF00C882) : Colors.grey,
+                                    size: 13,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    isOnline ? 'Raspberry Pi · Online' : 'Standby',
+                                    style: GoogleFonts.manrope(
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                      fontSize: 11, fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          // Bottom-left: Take Photo button
+                          Positioned(
+                            bottom: 14,
+                            left: 14,
+                            child: GestureDetector(
+                              onTap: () {
+                                _resetControlsTimer();
+                                if (!_isCapturing) _requestCapture();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                                decoration: BoxDecoration(
+                                  color: _isCapturing
+                                      ? const Color(0xFF00A36C).withValues(alpha: 0.7)
+                                      : const Color(0xFF00A36C),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _isCapturing
+                                        ? const SizedBox(
+                                            width: 14, height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                          )
+                                        : const Icon(LucideIcons.camera, size: 15, color: Colors.white),
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      _isCapturing ? 'Capturing…' : 'Take Photo',
+                                      style: GoogleFonts.manrope(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // Bottom-right: Fullscreen button
+                          Positioned(
+                            bottom: 14,
+                            right: 14,
+                            child: GestureDetector(
+                              onTap: _enterFullscreen,
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.25),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  LucideIcons.maximize2,
+                                  color: Color(0xFF00A36C),
+                                  size: 20,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-
-                // Bottom-right: Fullscreen circular button
-                Positioned(
-                  bottom: 14,
-                  right: 14,
-                  child: GestureDetector(
-                    onTap: _enterFullscreen,
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.25),
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        LucideIcons.maximize2,
-                        color: Color(0xFF00A36C),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
@@ -379,13 +432,13 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                       Text(
                         'Live Detection & Activity Logs',
                         style: GoogleFonts.manrope(
-                          fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1F2937),
+                          fontSize: 18, fontWeight: FontWeight.w800, color: primaryTextColor,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Patient detection, medicine intake & captures',
-                        style: GoogleFonts.manrope(fontSize: 13, color: const Color(0xFF6B7280)),
+                        style: GoogleFonts.manrope(fontSize: 13, color: secondaryTextColor),
                       ),
                     ],
                   ),
@@ -400,7 +453,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: _activityLogsStream,
               builder: (context, snapshot) {
-                // Loading state
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(color: Color(0xFF00A36C)),
@@ -409,7 +461,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
 
                 final docs = snapshot.data?.docs ?? [];
 
-                // Empty state — no fake data
                 if (docs.isEmpty) {
                   return Center(
                     child: Padding(
@@ -420,7 +471,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFD1FAE5),
+                              color: theme.brightness == Brightness.dark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(LucideIcons.activity, size: 36, color: Color(0xFF00A36C)),
@@ -429,14 +480,14 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           Text(
                             'No activity yet',
                             style: GoogleFonts.manrope(
-                              fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1F2937),
+                              fontSize: 18, fontWeight: FontWeight.w800, color: primaryTextColor,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Patient detections, medicine intake events, and camera captures will appear here in real-time.',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.manrope(fontSize: 14, color: const Color(0xFF6B7280), height: 1.4),
+                            style: GoogleFonts.manrope(fontSize: 14, color: secondaryTextColor, height: 1.4),
                           ),
                         ],
                       ),
@@ -458,7 +509,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     );
   }
 
-  // ─── FULLSCREEN VIEW ───────────────────────────────────────────────────────
+  // ─── FULLSCREEN VIEW (Landscape) ───────────────────────────────────────────
   Widget _buildFullscreenView() {
     final cameraUrl = _deviceData?['latestSnapshotUrl'] as String?;
     final isOnline = _deviceData?['isOnline'] as bool? ?? false;
@@ -485,12 +536,12 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     loadingBuilder: (_, child, progress) => progress == null
                         ? child
                         : const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C))),
-                    errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline),
+                    errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
                   )
                 else
-                  _buildStreamPlaceholder(isOnline),
+                  _buildStreamPlaceholder(isOnline, context),
 
-                // Animated Overlay Controls (Auto fade-in / fade-out)
+                // Animated Overlay Controls in Landscape
                 AnimatedOpacity(
                   opacity: _showControls ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 250),
@@ -531,7 +582,41 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           ),
                         ),
 
-                        // Bottom-left: Take Photo button (Matching normal view position)
+                        // Top-right: Standby / Status badge overlay on Landscape
+                        Positioned(
+                          top: 24,
+                          right: 20,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isOnline ? LucideIcons.wifi : LucideIcons.wifiOff,
+                                  color: isOnline ? const Color(0xFF00C882) : Colors.grey,
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isOnline ? 'Raspberry Pi · Online' : 'Standby',
+                                  style: GoogleFonts.manrope(
+                                    color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Bottom-left: Take Photo button
                         Positioned(
                           bottom: 24,
                           left: 20,
@@ -579,7 +664,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           ),
                         ),
 
-                        // Bottom-right: Minimize / Exit Fullscreen button (Matching normal view position)
+                        // Bottom-right: Exit Fullscreen button
                         Positioned(
                           bottom: 24,
                           right: 20,
@@ -663,14 +748,19 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       badgeLabel = 'Medicine Taken';
     }
 
+    final theme = Theme.of(context);
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBgColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+          BoxShadow(color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 3)),
         ],
       ),
       child: Row(
@@ -692,12 +782,12 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937)),
+                        style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: primaryTextColor),
                       ),
                     ),
                     Text(
                       timeStr,
-                      style: GoogleFonts.manrope(fontSize: 12, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w500),
+                      style: GoogleFonts.manrope(fontSize: 12, color: secondaryTextColor, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -705,7 +795,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                   const SizedBox(height: 4),
                   Text(
                     desc,
-                    style: GoogleFonts.manrope(fontSize: 13, color: const Color(0xFF6B7280), height: 1.3),
+                    style: GoogleFonts.manrope(fontSize: 13, color: secondaryTextColor, height: 1.3),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -746,25 +836,44 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     );
   }
 
-  // ─── STREAM PLACEHOLDER ────────────────────────────────────────────────────
-  Widget _buildStreamPlaceholder(bool isOnline) {
+  // ─── ADAPTIVE STREAM PLACEHOLDER ───────────────────────────────────────────
+  Widget _buildStreamPlaceholder(bool isOnline, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final List<Color> bgColors = isOnline
+        ? (isDark
+            ? const [Color(0xFF0F172A), Color(0xFF064E3B), Color(0xFF022C22)]
+            : const [Color(0xFFECFDF5), Color(0xFFD1FAE5), Color(0xFFA7F3D0)])
+        : (isDark
+            ? const [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF0F172A)]
+            : const [Color(0xFFE2E8F0), Color(0xFFCBD5E1), Color(0xFFE2E8F0)]);
+
+    final Color circleBg = isOnline
+        ? const Color(0xFF00A36C).withValues(alpha: isDark ? 0.18 : 0.14)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFF475569).withValues(alpha: 0.15));
+
+    final Color circleBorder = isOnline
+        ? const Color(0xFF00A36C).withValues(alpha: isDark ? 0.4 : 0.35)
+        : (isDark
+            ? Colors.white.withValues(alpha: 0.12)
+            : const Color(0xFF475569).withValues(alpha: 0.25));
+
+    final Color iconColor = isOnline
+        ? (isDark ? const Color(0xFF10B981) : const Color(0xFF00A36C))
+        : (isDark ? Colors.grey.shade400 : const Color(0xFF475569));
+
+    final Color titleColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final Color subtitleColor = isDark ? Colors.white70 : const Color(0xFF475569);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isOnline
-              ? const [
-                  Color(0xFF0F172A),
-                  Color(0xFF064E3B),
-                  Color(0xFF022C22),
-                ]
-              : const [
-                  Color(0xFF0F172A),
-                  Color(0xFF1E293B),
-                  Color(0xFF0F172A),
-                ],
+          colors: bgColors,
         ),
       ),
       child: Center(
@@ -775,20 +884,13 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isOnline
-                    ? const Color(0xFF00A36C).withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.08),
+                color: circleBg,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: isOnline
-                      ? const Color(0xFF00A36C).withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: 2,
-                ),
+                border: Border.all(color: circleBorder, width: 2),
                 boxShadow: isOnline
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF00A36C).withValues(alpha: 0.25),
+                          color: const Color(0xFF00A36C).withValues(alpha: isDark ? 0.25 : 0.18),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -798,14 +900,14 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
               child: Icon(
                 isOnline ? LucideIcons.video : LucideIcons.videoOff,
                 size: 40,
-                color: isOnline ? const Color(0xFF10B981) : Colors.grey.shade500,
+                color: iconColor,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               isOnline ? 'Raspberry Pi Camera Connected' : 'Camera Standby',
               style: GoogleFonts.manrope(
-                color: Colors.white,
+                color: titleColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
@@ -820,7 +922,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     : 'Waiting for camera connection or dispensing event trigger…',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.manrope(
-                  color: Colors.white70,
+                  color: subtitleColor,
                   fontSize: 12.5,
                   height: 1.35,
                 ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'patient_alerts_tab.dart';
 
 class CompartmentInventoryScreen extends StatelessWidget {
   const CompartmentInventoryScreen({super.key});
@@ -124,13 +126,34 @@ class CompartmentInventoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF7),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Medicine Inventory', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1F2937),
+        title: Text('Medicine Inventory', style: TextStyle(fontWeight: FontWeight.bold, color: primaryTextColor)),
+        backgroundColor: cardBgColor,
         elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+              );
+            },
+            tooltip: 'Notifications',
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _compartmentsStream,
@@ -148,17 +171,17 @@ class CompartmentInventoryScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey.shade300),
+                    Icon(Icons.inventory_2_outlined, size: 64, color: secondaryTextColor.withValues(alpha: 0.4)),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'No compartments found',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryTextColor),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       'Compartment data will appear here once your SmartDose Dispenser is paired and configured.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                      style: TextStyle(fontSize: 14, color: secondaryTextColor),
                     ),
                   ],
                 ),
@@ -192,7 +215,7 @@ class CompartmentInventoryScreen extends StatelessWidget {
                   ? DateFormat('MMM d, hh:mm a').format(lastRefilled.toDate())
                   : null;
 
-              Color borderColor = const Color(0xFFE5E7EB);
+              Color borderColor = isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB);
               Color barColor = const Color(0xFF00A36C);
               if (isEmpty) {
                 borderColor = const Color(0xFFFCA5A5);
@@ -208,11 +231,11 @@ class CompartmentInventoryScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 14),
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardBgColor,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: borderColor, width: (isLow || isEmpty) ? 1.5 : 1),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+                      BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 3)),
                     ],
                   ),
                   child: Column(
@@ -240,7 +263,7 @@ class CompartmentInventoryScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: medName != null ? const Color(0xFF1F2937) : const Color(0xFF9CA3AF),
+                                  color: medName != null ? primaryTextColor : secondaryTextColor,
                                 ),
                               ),
                             ],

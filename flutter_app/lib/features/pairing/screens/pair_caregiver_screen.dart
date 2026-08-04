@@ -92,18 +92,24 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
     const emerald = Color(0xFF10B981);
     final currentUid = _uid;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: cardBgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1F2937)),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Pair Caregiver',
-          style: TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           // Connection Requests Badge Action Button
@@ -160,15 +166,15 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF1F2937),
+                color: primaryTextColor,
                 letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'Generate a secure QR code that trusted family members can scan to connect to your account.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.4),
+              style: TextStyle(fontSize: 14, color: secondaryTextColor, height: 1.4),
               textAlign: TextAlign.center,
             ),
 
@@ -179,11 +185,11 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: cardBgColor,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -202,9 +208,9 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: emerald.withValues(alpha: 0.2), width: 2),
+                        border: Border.all(color: emerald.withValues(alpha: 0.3), width: 2),
                       ),
                       child: QrImageView(
                         data: _currentToken!.qrPayload,
@@ -223,9 +229,9 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
                     const SizedBox(height: 20),
 
                     // Pairing Code Box
-                    const Text(
+                    Text(
                       'OR USE PAIRING CODE',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF), letterSpacing: 1.2),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: secondaryTextColor, letterSpacing: 1.2),
                     ),
                     const SizedBox(height: 8),
                     InkWell(
@@ -239,20 +245,20 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                          border: Border.all(color: theme.dividerColor),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               _currentToken!.pairingCode,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 2.0,
-                                color: Color(0xFF111827),
+                                color: primaryTextColor,
                               ),
                             ),
                             const SizedBox(width: 10),

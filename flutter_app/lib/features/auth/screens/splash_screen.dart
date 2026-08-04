@@ -58,21 +58,35 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? const Color(0xFF121214) : Colors.white,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFC5F2DC), // Vibrant light green top
-              Color(0xFFE8F8F0), // Soft mint middle
-              Color(0xFFFFFFFF), // Pure white bottom
-            ],
-            stops: [0.0, 0.45, 1.0],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF064E3B),
+                    Color(0xFF18181B),
+                    Color(0xFF121214),
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFC5F2DC), // Vibrant light green top
+                    Color(0xFFE8F8F0), // Soft mint middle
+                    Color(0xFFFFFFFF), // Pure white bottom
+                  ],
+                  stops: [0.0, 0.45, 1.0],
+                ),
         ),
         child: SafeArea(
           child: FadeTransition(
@@ -115,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen>
                     style: GoogleFonts.manrope(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF1F2937),
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
                       letterSpacing: -0.5,
                     ),
                   ),

@@ -112,6 +112,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   @override
   Widget build(BuildContext context) {
     final bool dobError = _dobTouched && _selectedDob == null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -128,7 +129,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Title & Subtitle
-                    const SizedBox(
+                    SizedBox(
                       width: double.infinity,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -139,18 +140,18 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF1F2937),
+                              color: isDark ? Colors.white : const Color(0xFF1F2937),
                               letterSpacing: -0.5,
                             ),
                           ),
-                          SizedBox(height: 6),
+                          const SizedBox(height: 6),
                           Text(
                             'Tell us a bit about yourself to set up your profile.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF6B7280),
+                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                             ),
                           ),
                         ],
@@ -165,7 +166,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                     TextFormField(
                       controller: _nameController,
                       textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                       decoration: _pillDecoration('e.g. Juan dela Cruz'),
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Full name is required';
@@ -182,7 +183,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         _DynamicPhoneFormatter(),
@@ -202,10 +203,10 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                         height: 56,
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: isDark ? const Color(0xFF121214) : const Color(0xFFF9FAFB),
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(
-                            color: dobError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EB),
+                            color: dobError ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB)),
                             width: dobError ? 2 : 1,
                           ),
                         ),
@@ -218,12 +219,14 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: _selectedDob == null ? const Color(0xFF9CA3AF) : const Color(0xFF1F2937),
+                                color: _selectedDob == null
+                                    ? (isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF))
+                                    : (isDark ? Colors.white : const Color(0xFF1F2937)),
                               ),
                             ),
                             const Spacer(),
                             Icon(Icons.calendar_today_rounded,
-                                color: dobError ? const Color(0xFFEF4444) : const Color(0xFF6B7280), size: 20),
+                                color: dobError ? const Color(0xFFEF4444) : (isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)), size: 20),
                           ],
                         ),
                       ),
@@ -244,7 +247,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: _selectedGender,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                       decoration: _pillDecoration('Select gender'),
                       items: _genders
                           .map((g) => DropdownMenuItem<String>(
@@ -254,14 +257,14 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                                     Icon(g.icon, size: 20, color: const Color(0xFF00A36C)),
                                     const SizedBox(width: 10),
                                     Text(g.label,
-                                        style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF1F2937))),
+                                        style: TextStyle(fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF1F2937))),
                                   ],
                                 ),
                               ))
                           .toList(),
                       onChanged: (v) => setState(() => _selectedGender = v),
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF6B7280)),
-                      dropdownColor: Colors.white,
+                      icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                      dropdownColor: isDark ? const Color(0xFF1E1E22) : Colors.white,
                       borderRadius: BorderRadius.circular(24),
                     ),
 
@@ -274,7 +277,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                       controller: _addressController,
                       textCapitalization: TextCapitalization.words,
                       maxLines: 2,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                       decoration: _pillDecoration('House #, Street, City')
                           .copyWith(contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
                     ),
@@ -290,18 +293,36 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
     );
   }
 
-  InputDecoration _pillDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15, fontWeight: FontWeight.w500),
-        filled: true,
-        fillColor: const Color(0xFFF9FAFB),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444))),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
-      );
+  InputDecoration _pillDecoration(String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+          color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+          fontSize: 15,
+          fontWeight: FontWeight.w500),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF121214) : const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444))),
+      focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
+    );
+  }
 }
 
 class _FieldLabel extends StatelessWidget {
@@ -313,20 +334,28 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Icon(icon, size: 15, color: const Color(0xFF00A36C)),
         const SizedBox(width: 6),
         Text(label,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF6B7280), letterSpacing: 0.8)),
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                letterSpacing: 0.8)),
         if (required) ...[
           const SizedBox(width: 3),
           const Text('*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFEF4444))),
         ] else ...[
           const SizedBox(width: 3),
-          const Text('(OPTIONAL)',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
+          Text('(OPTIONAL)',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF9CA3AF),
+                  letterSpacing: 0.5)),
         ],
       ],
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../pairing/services/pairing_service.dart';
 import '../../pairing/screens/connect_patient_screen.dart';
+import '../../patient/screens/patient_alerts_tab.dart';
 
 class CaregiverDashboardScreen extends StatefulWidget {
   final VoidCallback onSwitchRole;
@@ -36,6 +37,16 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.notifications_none_rounded, color: primaryTextColor),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+              );
+            },
+            tooltip: 'Notifications',
+          ),
+          IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded, color: emerald),
             onPressed: () {
               Navigator.push(
@@ -46,9 +57,9 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
             tooltip: 'Connect to Patient',
           ),
           IconButton(
-            icon: const Icon(Icons.swap_horiz_rounded, color: Color(0xFF3B82F6)),
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
             onPressed: widget.onSwitchRole,
-            tooltip: 'Switch Role',
+            tooltip: 'Log Out',
           ),
         ],
       ),

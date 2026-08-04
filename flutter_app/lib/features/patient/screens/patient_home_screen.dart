@@ -176,15 +176,17 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               userInitials: _userInitials,
               onGoToMeds: () => _switchTab(1),
               onGoToHistory: () => _switchTab(2),
-              onGoToAlerts: () => _switchTab(3),
-              onGoToProfile: () => _switchTab(4),
+              onGoToAlerts: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PatientAlertsTab(onMarkAllRead: _markAllNotificationsRead),
+                ),
+              ),
+              onGoToProfile: () => _switchTab(3),
               unreadCount: _unreadAlertsCount,
             ),
             const PatientMedsTab(),
             const PatientHistoryTab(),
-            PatientAlertsTab(
-              onMarkAllRead: _markAllNotificationsRead,
-            ),
             PatientProfileTab(
               fallbackName: _displayName,
               onSignOut: widget.onSignOut,
@@ -210,8 +212,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             _buildNavItem(0, LucideIcons.home, 'Home'),
             _buildNavItem(1, LucideIcons.calendar, 'Meds'),
             _buildNavItem(2, LucideIcons.history, 'History'),
-            _buildNavItem(3, LucideIcons.bell, 'Alerts', badgeCount: _unreadAlertsCount),
-            _buildNavItem(4, LucideIcons.user, 'Profile'),
+            _buildNavItem(3, LucideIcons.user, 'Profile'),
           ],
         ),
       ),

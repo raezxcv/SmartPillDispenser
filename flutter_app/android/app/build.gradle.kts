@@ -18,7 +18,6 @@ android {
     namespace = "com.smartpilldispenser.smart_pill_dispenser"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
-    ndkPath = "C:/Users/User/AppData/Local/Android/Sdk/ndk/28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -39,6 +38,12 @@ android {
             keyPassword = keystoreProperties["keyPassword"] as String
             storeFile = file(keystoreProperties["storeFile"] as String)
             storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+
+    packaging {
+        resources {
+            excludes += "META-INF/*"
         }
     }
 

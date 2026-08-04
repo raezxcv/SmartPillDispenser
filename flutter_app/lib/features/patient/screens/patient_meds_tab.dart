@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'patient_alerts_tab.dart';
 
 class PatientMedsTab extends StatefulWidget {
   const PatientMedsTab({super.key});
@@ -286,14 +288,47 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Schedule',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: primaryTextColor, letterSpacing: -0.5),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
-                style: TextStyle(fontSize: 15, color: secondaryTextColor),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Schedule',
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: primaryTextColor, letterSpacing: -0.5),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('EEEE, d MMMM yyyy').format(_selectedDate),
+                        style: TextStyle(fontSize: 15, color: secondaryTextColor),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+                      );
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: theme.cardTheme.color ?? theme.colorScheme.surface,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.04),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               _buildDateStrip(),

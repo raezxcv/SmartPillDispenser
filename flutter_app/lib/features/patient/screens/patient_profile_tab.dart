@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../pairing/screens/pair_caregiver_screen.dart';
 import '../../pairing/screens/connected_caregivers_screen.dart';
 import 'compartment_inventory_screen.dart';
 import 'camera_feed_screen.dart';
+import 'patient_alerts_tab.dart';
 
 class PatientProfileTab extends ConsumerStatefulWidget {
   final VoidCallback onSignOut;
@@ -49,106 +52,171 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
     final cardColor = Theme.of(context).colorScheme.surface;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
+    DateTime? initialDob;
+    if (dobCtrl.text.isNotEmpty) {
+      try {
+        initialDob = DateTime.parse(dobCtrl.text.trim());
+      } catch (_) {}
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Edit Profile',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit Profile',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF00A36C)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF00A36C)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: dobCtrl,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Date of Birth',
-                hintText: 'YYYY-MM-DD',
-                prefixIcon: const Icon(Icons.cake_outlined, color: Color(0xFF00A36C)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00A36C),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                  elevation: 0,
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameCtrl,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF00A36C)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                onPressed: () async {
-                  final uid = _uid;
-                  if (uid != null) {
-                    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-                      'name': nameCtrl.text.trim(),
-                      'phone': phoneCtrl.text.trim(),
-                      'dob': dobCtrl.text.trim(),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(color: textColor),
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF00A36C)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Date of Birth Date Picker
+              InkWell(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: initialDob ?? DateTime(now.year - 30),
+                    firstDate: DateTime(1920),
+                    lastDate: now,
+                    builder: (c, child) => Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: Theme.of(context).colorScheme.copyWith(
+                          primary: const Color(0xFF00A36C),
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    final formatted = DateFormat('yyyy-MM-dd').format(picked);
+                    setSheetState(() {
+                      dobCtrl.text = formatted;
+                      initialDob = picked;
                     });
                   }
-                  if (mounted) {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile updated successfully!'),
-                        backgroundColor: Color(0xFF00A36C),
-                      ),
-                    );
-                  }
                 },
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.cake_outlined, color: Color(0xFF00A36C)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Date of Birth',
+                              style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              dobCtrl.text.isEmpty ? 'Select Date of Birth' : dobCtrl.text,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: dobCtrl.text.isEmpty
+                                    ? textColor.withValues(alpha: 0.4)
+                                    : textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.calendar_today_rounded, size: 20, color: textColor.withValues(alpha: 0.6)),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00A36C),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    elevation: 0,
+                  ),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final uid = _uid;
+                    if (uid != null) {
+                      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'dob': dobCtrl.text.trim(),
+                      });
+                    }
+                    if (mounted) {
+                      Navigator.pop(ctx);
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Profile updated successfully!'),
+                          backgroundColor: Color(0xFF00A36C),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Save Changes',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -195,22 +263,55 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: primaryTextColor,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Account & device settings',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: secondaryTextColor,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Profile',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: primaryTextColor,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Account & device settings',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+                      );
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: cardBgColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 
@@ -463,7 +564,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
 
               const SizedBox(height: 28),
 
-              // Sign Out Button
+              // Log Out Button
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -476,7 +577,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   onPressed: widget.onSignOut,
                   icon: const Icon(Icons.logout_rounded, size: 20),
                   label: const Text(
-                    'Sign Out',
+                    'Log Out',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),

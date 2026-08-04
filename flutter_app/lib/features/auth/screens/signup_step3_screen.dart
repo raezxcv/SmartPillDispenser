@@ -171,6 +171,7 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
   @override
   Widget build(BuildContext context) {
     final bool isGoogleUser = widget.googleUid != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -192,13 +193,13 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
+                          Text(
                             'Account Credentials',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF1F2937),
+                              color: isDark ? Colors.white : const Color(0xFF1F2937),
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -208,10 +209,10 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                                 ? 'Verify your email to complete registration.'
                                 : 'Set up your account login credentials.',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF6B7280),
+                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                             ),
                           ),
                         ],
@@ -252,7 +253,7 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       readOnly: isGoogleUser,
-                      style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                       decoration: _pillDecoration('you@example.com'),
                       validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
                     ),
@@ -267,12 +268,12 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         onChanged: _onPasswordChanged,
-                        style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                         decoration: _pillDecoration('At least 8 characters').copyWith(
                           suffixIcon: IconButton(
                             icon: Icon(
                                 _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                color: const Color(0xFF6B7280), size: 22),
+                                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 22),
                             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                           ),
                         ),
@@ -298,12 +299,12 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirm,
-                        style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                         decoration: _pillDecoration('Repeat your password').copyWith(
                           suffixIcon: IconButton(
                             icon: Icon(
                                 _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                color: const Color(0xFF6B7280), size: 22),
+                                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 22),
                             onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                           ),
                         ),
@@ -327,10 +328,10 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                             width: 22,
                             height: 22,
                             decoration: BoxDecoration(
-                              color: _agreedToTerms ? const Color(0xFF00A36C) : Colors.white,
+                              color: _agreedToTerms ? const Color(0xFF00A36C) : (isDark ? const Color(0xFF121214) : Colors.white),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
-                                  color: _agreedToTerms ? const Color(0xFF00A36C) : const Color(0xFFD1D5DB),
+                                  color: _agreedToTerms ? const Color(0xFF00A36C) : (isDark ? const Color(0xFF3F3F46) : const Color(0xFFD1D5DB)),
                                   width: 1.5),
                             ),
                             child: _agreedToTerms
@@ -340,11 +341,11 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: RichText(
-                              text: const TextSpan(
+                              text: TextSpan(
                                 text: 'I agree to the ',
                                 style: TextStyle(
-                                    fontSize: 14, color: Color(0xFF374151), fontWeight: FontWeight.w600),
-                                children: [
+                                    fontSize: 14, color: isDark ? Colors.white : const Color(0xFF374151), fontWeight: FontWeight.w600),
+                                children: const [
                                   TextSpan(
                                       text: 'Terms',
                                       style: TextStyle(
@@ -374,18 +375,36 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
     );
   }
 
-  InputDecoration _pillDecoration(String hint) => InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15, fontWeight: FontWeight.w500),
-        filled: true,
-        fillColor: const Color(0xFFF9FAFB),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444))),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
-      );
+  InputDecoration _pillDecoration(String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+          color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+          fontSize: 15,
+          fontWeight: FontWeight.w500),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF121214) : const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444))),
+      focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
+    );
+  }
 }
 
 class _PasswordStrengthBar extends StatelessWidget {
@@ -394,6 +413,7 @@ class _PasswordStrengthBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -411,7 +431,7 @@ class _PasswordStrengthBar extends StatelessWidget {
                   width: segW,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: filled ? strength.color : const Color(0xFFE5E7EB),
+                    color: filled ? strength.color : (isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB)),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -425,8 +445,8 @@ class _PasswordStrengthBar extends StatelessWidget {
           child: Row(
             key: ValueKey(strength),
             children: [
-              const Text('Password strength: ',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+              Text('Password strength: ',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280))),
               Text(strength.label,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: strength.color)),
             ],
@@ -446,13 +466,17 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Icon(icon, size: 15, color: const Color(0xFF00A36C)),
         const SizedBox(width: 6),
         Text(label,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF6B7280), letterSpacing: 0.8)),
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
+                letterSpacing: 0.8)),
         if (required) ...[
           const SizedBox(width: 3),
           const Text('*', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFEF4444))),

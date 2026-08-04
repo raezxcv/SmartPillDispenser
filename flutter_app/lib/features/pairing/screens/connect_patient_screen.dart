@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/pairing_service.dart';
@@ -264,17 +264,23 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
   }
 
   Widget _buildPermissionDeniedState(Color emerald) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(28.0),
         child: Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-            color: const Color(0xFF1F2937),
+            color: cardBgColor,
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
                 blurRadius: 20,
               ),
             ],
@@ -285,23 +291,23 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
               Container(
                 width: 72,
                 height: 72,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF374151),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF374151) : const Color(0xFFFEF3C7),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.camera_alt_outlined, color: Colors.amber, size: 36),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Camera Permission Required',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primaryTextColor),
               ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'To scan QR codes and connect to patients, SmartDose needs camera access.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF), height: 1.4),
+                style: TextStyle(fontSize: 14, color: secondaryTextColor, height: 1.4),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -332,13 +338,13 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: _showManualEntryDialog,
-                  icon: const Icon(Icons.keyboard_outlined, color: Colors.white),
-                  label: const Text(
+                  icon: Icon(Icons.keyboard_outlined, color: primaryTextColor),
+                  label: Text(
                     'Enter Pairing Code Manually',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: primaryTextColor),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF4B5563), width: 1.5),
+                    side: BorderSide(color: theme.dividerColor, width: 1.5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),

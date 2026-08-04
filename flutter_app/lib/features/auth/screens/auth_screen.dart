@@ -248,70 +248,93 @@ class _AuthScreenState extends State<AuthScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF005837),
+      backgroundColor: isDark ? const Color(0xFF121214) : const Color(0xFF005837),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        // Slightly darker rich emerald gradient background
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF005837),
-              Color(0xFF00754C),
-              Color(0xFF00905D),
-              Color(0xFF00A86E),
-            ],
-            stops: [0.0, 0.35, 0.70, 1.0],
-          ),
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF064E3B),
+                    Color(0xFF18181B),
+                    Color(0xFF121214),
+                    Color(0xFF121214),
+                  ],
+                  stops: [0.0, 0.35, 0.70, 1.0],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF005837),
+                    Color(0xFF00754C),
+                    Color(0xFF00905D),
+                    Color(0xFF00A86E),
+                  ],
+                  stops: [0.0, 0.35, 0.70, 1.0],
+                ),
         ),
         child: Stack(
           children: [
-            // ── Background Elements Behind White Card Sheet ────────────────
+            // ── Background circles with centered icons ─────────────────────
+            // Sparkles — top-right large circle
             Positioned(
-              top: -30, right: -30,
-              child: Container(
-                width: 170, height: 170,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.12),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 60, left: -40,
+              top: -20, right: -20,
               child: Container(
                 width: 140, height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.08),
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.sparkles,
+                    size: 28,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                 ),
               ),
             ),
+            // ShieldCheck — left mid circle
             Positioned(
-              top: 30, right: 30,
-              child: Icon(
-                LucideIcons.sparkles,
-                size: 28,
-                color: Colors.white.withValues(alpha: 0.25),
+              top: 60, left: -30,
+              child: Container(
+                width: 130, height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.shieldCheck,
+                    size: 32,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
             ),
+            // Pill — standalone smaller circle, right side
             Positioned(
-              top: 100, left: 24,
-              child: Icon(
-                LucideIcons.shieldCheck,
-                size: 26,
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
-            ),
-            Positioned(
-              top: 180, right: 28,
-              child: Icon(
-                LucideIcons.pill,
-                size: 26,
-                color: Colors.white.withValues(alpha: 0.24),
+              top: 170, right: 10,
+              child: Container(
+                width: 110, height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.10),
+                ),
+                child: Center(
+                  child: Icon(
+                    LucideIcons.pill,
+                    size: 24,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
               ),
             ),
 
@@ -333,8 +356,8 @@ class _AuthScreenState extends State<AuthScreen>
                             children: [
                               // Transparent Logo
                               SizedBox(
-                                width: 120,
-                                height: 120,
+                                width: 100,
+                                height: 100,
                                 child: Image.asset(
                                   'assets/Smart Dose Logo No Bg.png',
                                   fit: BoxFit.contain,
@@ -381,11 +404,15 @@ class _AuthScreenState extends State<AuthScreen>
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E22) : Colors.white,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
                       boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 24, offset: Offset(0, -6)),
+                        BoxShadow(
+                          color: isDark ? Colors.black.withValues(alpha: 0.4) : Colors.black12,
+                          blurRadius: 24,
+                          offset: const Offset(0, -6),
+                        ),
                       ],
                     ),
                     child: SafeArea(
@@ -410,7 +437,7 @@ class _AuthScreenState extends State<AuthScreen>
                                         opacity: _headerFade,
                                         child: SlideTransition(
                                           position: _headerSlide,
-                                          child: const SizedBox(
+                                          child: SizedBox(
                                             width: double.infinity,
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -421,18 +448,18 @@ class _AuthScreenState extends State<AuthScreen>
                                                   style: TextStyle(
                                                     fontSize: 30,
                                                     fontWeight: FontWeight.w900,
-                                                    color: Color(0xFF1F2937),
+                                                    color: isDark ? Colors.white : const Color(0xFF1F2937),
                                                     letterSpacing: -0.5,
                                                   ),
                                                 ),
-                                                SizedBox(height: 6),
+                                                const SizedBox(height: 6),
                                                 Text(
                                                   'Enter your credentials below to log back into your account.',
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w700,
-                                                    color: Color(0xFF6B7280),
+                                                    color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                                   ),
                                                 ),
                                               ],
@@ -480,7 +507,7 @@ class _AuthScreenState extends State<AuthScreen>
                                               TextFormField(
                                                 controller: _emailController,
                                                 keyboardType: TextInputType.emailAddress,
-                                                style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                                                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                                                 decoration: _pill('you@example.com'),
                                                 validator: (v) => v == null || !v.contains('@') ? 'Enter a valid email' : null,
                                               ),
@@ -496,10 +523,10 @@ class _AuthScreenState extends State<AuthScreen>
                                               TextFormField(
                                                 controller: _passwordController,
                                                 obscureText: _obscurePassword,
-                                                style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
+                                                style: TextStyle(color: isDark ? Colors.white : const Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w700),
                                                 decoration: _pill('••••••••').copyWith(
                                                   suffixIcon: IconButton(
-                                                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: const Color(0xFF6B7280), size: 22),
+                                                    icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280), size: 22),
                                                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                                   ),
                                                 ),
@@ -516,14 +543,14 @@ class _AuthScreenState extends State<AuthScreen>
                                                       Container(
                                                         width: 22, height: 22,
                                                         decoration: BoxDecoration(
-                                                          color: _rememberMe ? const Color(0xFF00A36C) : Colors.white,
+                                                          color: _rememberMe ? const Color(0xFF00A36C) : (isDark ? const Color(0xFF121214) : Colors.white),
                                                           borderRadius: BorderRadius.circular(6),
-                                                          border: Border.all(color: _rememberMe ? const Color(0xFF00A36C) : const Color(0xFFD1D5DB), width: 1.5),
+                                                          border: Border.all(color: _rememberMe ? const Color(0xFF00A36C) : (isDark ? const Color(0xFF3F3F46) : const Color(0xFFD1D5DB)), width: 1.5),
                                                         ),
                                                         child: _rememberMe ? const Icon(Icons.check_rounded, size: 16, color: Colors.white) : null,
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      const Text('Remember me', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+                                                      Text('Remember me', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: isDark ? Colors.white : const Color(0xFF374151))),
                                                     ]),
                                                   ),
                                                   const Spacer(),
@@ -564,10 +591,10 @@ class _AuthScreenState extends State<AuthScreen>
                                             onTap: widget.onGoToSignUp,
                                             child: RichText(
                                               textAlign: TextAlign.center,
-                                              text: const TextSpan(
+                                              text: TextSpan(
                                                 text: "Don't have an account? ",
-                                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF6B7280)),
-                                                children: [TextSpan(text: 'Create an account', style: TextStyle(color: Color(0xFF00A36C), fontWeight: FontWeight.w900))],
+                                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280)),
+                                                children: const [TextSpan(text: 'Create an account', style: TextStyle(color: Color(0xFF00A36C), fontWeight: FontWeight.w900))],
                                               ),
                                             ),
                                           ),
@@ -594,17 +621,36 @@ class _AuthScreenState extends State<AuthScreen>
     );
   }
 
-  InputDecoration _pill(String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 15, fontWeight: FontWeight.w500),
-    filled: true, fillColor: const Color(0xFFF9FAFB),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
-    errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444))),
-    focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
-  );
+  InputDecoration _pill(String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+          color: isDark ? const Color(0xFF71717A) : const Color(0xFF9CA3AF),
+          fontSize: 15,
+          fontWeight: FontWeight.w500),
+      filled: true,
+      fillColor: isDark ? const Color(0xFF121214) : const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: BorderSide(
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFE5E7EB))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFF00A36C), width: 2)),
+      errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444))),
+      focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(28),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2)),
+    );
+  }
 }
 
 // ─── Gradient Button ──────────────────────────────────────────────────────────
@@ -665,16 +711,17 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Icon(icon, size: 15, color: const Color(0xFF00A36C)),
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF6B7280),
+            color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
             letterSpacing: 0.8,
           ),
         ),

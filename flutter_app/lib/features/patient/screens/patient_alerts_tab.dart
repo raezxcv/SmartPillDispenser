@@ -5,11 +5,13 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class PatientAlertsTab extends StatefulWidget {
-  final VoidCallback onMarkAllRead;
+  final VoidCallback? onMarkAllRead;
+  final bool showAppBar;
 
   const PatientAlertsTab({
     super.key,
-    required this.onMarkAllRead,
+    this.onMarkAllRead,
+    this.showAppBar = true,
   });
 
   @override
@@ -41,6 +43,27 @@ class _PatientAlertsTabState extends State<PatientAlertsTab> {
         .update({'isRead': true});
   }
 
+  Future<void> _markAllReadInternal() async {
+    if (widget.onMarkAllRead != null) {
+      widget.onMarkAllRead!();
+      return;
+    }
+    final uid = _uid;
+    if (uid == null) return;
+    final batch = FirebaseFirestore.instance.batch();
+    final unreadDocs = await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(uid)
+        .collection('items')
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    for (var doc in unreadDocs.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
+  }
+
   String _formatTimestamp(dynamic createdAt) {
     if (createdAt == null) return 'Just now';
     DateTime dt;
@@ -67,7 +90,7 @@ class _PatientAlertsTabState extends State<PatientAlertsTab> {
     final primaryTextColor = theme.colorScheme.onSurface;
     final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+    final content = StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _notificationsStream,
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
@@ -105,7 +128,7 @@ class _PatientAlertsTabState extends State<PatientAlertsTab> {
                   ),
                   if (unreadCount > 0)
                     GestureDetector(
-                      onTap: widget.onMarkAllRead,
+                      onTap: _markAllReadInternal,
                       child: const Text(
                         'Mark all read',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF00A36C)),
@@ -116,6 +139,7 @@ class _PatientAlertsTabState extends State<PatientAlertsTab> {
               const SizedBox(height: 20),
               if (docs.isEmpty)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(40),
                   decoration: BoxDecoration(color: cardBgColor, borderRadius: BorderRadius.circular(24)),
                   child: Column(
@@ -271,6 +295,32 @@ class _PatientAlertsTabState extends State<PatientAlertsTab> {
           ),
         );
       },
+    );
+
+    if (!widget.showAppBar) return content;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: cardBgColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Notifications',
+          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold, fontSize: 18),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.checkCheck, color: Color(0xFF00A36C)),
+            onPressed: _markAllReadInternal,
+            tooltip: 'Mark all read',
+          ),
+        ],
+      ),
+      body: content,
     );
   }
 }

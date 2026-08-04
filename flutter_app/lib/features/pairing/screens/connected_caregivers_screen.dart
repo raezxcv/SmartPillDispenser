@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../services/pairing_service.dart';
+import '../../patient/screens/patient_alerts_tab.dart';
 
 class ConnectedCaregiversScreen extends StatefulWidget {
   const ConnectedCaregiversScreen({super.key});
@@ -167,19 +169,37 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
   Widget build(BuildContext context) {
     const emerald = Color(0xFF10B981);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF8),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: cardBgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1F2937)),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: primaryTextColor),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Connected Caregivers',
-          style: TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold, fontSize: 18),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+              );
+            },
+            tooltip: 'Notifications',
+          ),
+        ],
       ),
       body: _uid == null
           ? const Center(child: Text('Please log in first'))
@@ -199,22 +219,22 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFECFDF5),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.people_outline_rounded, color: emerald, size: 40),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'No Caregivers Connected',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryTextColor),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Generate a QR code from the Pair Caregiver screen to connect a caregiver.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                          style: TextStyle(fontSize: 14, color: secondaryTextColor),
                         ),
                       ],
                     ),
@@ -244,11 +264,11 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
                     return Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardBgColor,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -260,7 +280,7 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
                             children: [
                               CircleAvatar(
                                 radius: 26,
-                                backgroundColor: const Color(0xFFECFDF5),
+                                backgroundColor: isDark ? const Color(0xFF064E3B) : const Color(0xFFECFDF5),
                                 child: Text(
                                   caregiverName[0].toUpperCase(),
                                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: emerald),
@@ -273,12 +293,12 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
                                   children: [
                                     Text(
                                       caregiverName,
-                                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
+                                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: primaryTextColor),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       '$relationship · $lastActiveStr',
-                                      style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                                      style: TextStyle(fontSize: 13, color: secondaryTextColor),
                                     ),
                                   ],
                                 ),

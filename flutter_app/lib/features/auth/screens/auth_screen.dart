@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../providers/auth_service.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 /// AuthScreen — Primary Login screen with slightly darker rich emerald gradient background,
 /// tight logo-to-title spacing via Transform.translate, higher Welcome Back position,
@@ -196,14 +197,9 @@ class _AuthScreenState extends State<AuthScreen>
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          gradient: isSending
-                              ? null
-                              : const LinearGradient(colors: [Color(0xFF00C882), Color(0xFF00A36C)]),
-                          color: isSending ? const Color(0xFFD1D5DB) : null,
+                          gradient: const LinearGradient(colors: [Color(0xFF00C882), Color(0xFF00A36C)]),
                           borderRadius: BorderRadius.circular(25),
-                          boxShadow: isSending
-                              ? []
-                              : [BoxShadow(color: const Color(0xFF00A36C).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: const Color(0xFF00A36C).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4))],
                         ),
                         child: Material(
                           color: Colors.transparent,
@@ -229,7 +225,7 @@ class _AuthScreenState extends State<AuthScreen>
                             borderRadius: BorderRadius.circular(25),
                             child: Center(
                               child: isSending
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  ? const SmartDoseLoading(size: 32, color: Colors.white)
                                   : const Text('Send Link', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
                             ),
                           ),
@@ -668,10 +664,9 @@ class _GradientButton extends StatelessWidget {
     return Container(
       width: double.infinity, height: 56,
       decoration: BoxDecoration(
-        gradient: isLoading ? null : const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(0xFF00C882), Color(0xFF00A36C)]),
-        color: isLoading ? const Color(0xFFD1D5DB) : null,
+        gradient: const LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(0xFF00C882), Color(0xFF00A36C)]),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: isLoading ? [] : [BoxShadow(color: const Color(0xFF00A36C).withValues(alpha: 0.38), blurRadius: 18, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: const Color(0xFF00A36C).withValues(alpha: 0.38), blurRadius: 18, offset: const Offset(0, 6))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -680,7 +675,7 @@ class _GradientButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           child: Center(
             child: isLoading
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                ? const SmartDoseLoading(size: 40, color: Colors.white)
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

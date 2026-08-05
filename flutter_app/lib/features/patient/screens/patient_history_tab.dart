@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class PatientHistoryTab extends StatefulWidget {
   const PatientHistoryTab({super.key});
@@ -38,13 +39,9 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _historyLogsStream {
     final uid = _uid;
     if (uid == null) return null;
-    final range = _dateRange;
     return FirebaseFirestore.instance
         .collection('dispensingLogs')
         .where('patientUid', isEqualTo: uid)
-        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(range.start))
-        .where('timestamp', isLessThan: Timestamp.fromDate(range.end))
-        .orderBy('timestamp', descending: true)
         .snapshots();
   }
 
@@ -52,15 +49,9 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _weeklyLogsStream {
     final uid = _uid;
     if (uid == null) return null;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final weekStart = today.subtract(const Duration(days: 6));
     return FirebaseFirestore.instance
         .collection('dispensingLogs')
         .where('patientUid', isEqualTo: uid)
-        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(weekStart))
-        .where('timestamp', isLessThan: Timestamp.fromDate(today.add(const Duration(days: 1))))
-        .orderBy('timestamp', descending: false)
         .snapshots();
   }
 
@@ -479,39 +470,74 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
     final primaryTextColor = theme.colorScheme.onSurface;
     final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
 
+    final filters = ['Today', 'Week', 'Month'];
+    final selectedIndex = filters.indexOf(_historyFilter).clamp(0, 2);
+    final alignmentX = -1.0 + (selectedIndex * 1.0);
+
     return Container(
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: cardBgColor,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.03), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: theme.brightness == Brightness.dark ? 0.2 : 0.03),
+            blurRadius: 10,
+          ),
+        ],
       ),
-      child: Row(
-        children: ['Today', 'Week', 'Month'].map((filter) {
-          final isSelected = _historyFilter == filter;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _historyFilter = filter),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                alignment: Alignment.center,
+      child: Stack(
+        children: [
+          // Sliding Green Pill Background Indicator
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.fastOutSlowIn,
+            alignment: Alignment(alignmentX, 0.0),
+            child: FractionallySizedBox(
+              widthFactor: 1 / 3,
+              heightFactor: 1.0,
+              child: Container(
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF00A36C) : Colors.transparent,
+                  color: const Color(0xFF00A36C),
                   borderRadius: BorderRadius.circular(26),
-                ),
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : secondaryTextColor,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
             ),
-          );
-        }).toList(),
+          ),
+
+          // Tab Options Row with smooth text color transition
+          Row(
+            children: filters.map((filter) {
+              final isSelected = _historyFilter == filter;
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => setState(() => _historyFilter = filter),
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 250),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: theme.textTheme.bodyMedium?.fontFamily,
+                        color: isSelected ? Colors.white : secondaryTextColor,
+                      ),
+                      child: Text(filter),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -529,15 +555,31 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(color: Color(0xFF00A36C)),
+              child: SmartDoseLoading(size: 140),
             ),
           );
         }
 
-        final docs = snapshot.data?.docs ?? [];
+        final range = _dateRange;
+        final allDocs = snapshot.data?.docs ?? [];
+        final docs = allDocs.where((doc) {
+          final ts = doc.data()['timestamp'] as Timestamp?;
+          if (ts == null) return false;
+          final date = ts.toDate();
+          return (date.isAfter(range.start.subtract(const Duration(seconds: 1))) || date.isAtSameMomentAs(range.start)) &&
+                 date.isBefore(range.end);
+        }).toList();
+
+        docs.sort((a, b) {
+          final tsA = a.data()['timestamp'] as Timestamp?;
+          final tsB = b.data()['timestamp'] as Timestamp?;
+          if (tsA == null || tsB == null) return 0;
+          return tsB.compareTo(tsA);
+        });
 
         if (docs.isEmpty) {
           return Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(color: cardBgColor, borderRadius: BorderRadius.circular(24)),
             child: Column(
@@ -579,14 +621,14 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
             label = DateFormat('EEEE, MMM d').format(dayDate);
           }
 
-          grouped.putIfAbsent(label, () => []).add(data);
+          grouped.putIfAbsent(label, () => <Map<String, dynamic>>[]).add(data);
         }
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: grouped.entries.map((entry) {
             return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12, top: 4),
@@ -646,6 +688,7 @@ class _PatientHistoryTabState extends State<PatientHistoryTab> {
     return GestureDetector(
       onTap: () => _showRecordDetailSheet(item),
       child: Container(
+        width: double.infinity,
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

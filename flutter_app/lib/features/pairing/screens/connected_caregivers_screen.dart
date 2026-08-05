@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../services/pairing_service.dart';
 import '../../patient/screens/patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class ConnectedCaregiversScreen extends StatefulWidget {
   const ConnectedCaregiversScreen({super.key});
@@ -207,7 +208,7 @@ class _ConnectedCaregiversScreenState extends State<ConnectedCaregiversScreen> {
               stream: _pairingService.getConnectedCaregiversStream(_uid!),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: emerald));
+                  return const Center(child: SmartDoseLoading(size: 80));
                 }
 
                 final caregivers = snapshot.data ?? [];

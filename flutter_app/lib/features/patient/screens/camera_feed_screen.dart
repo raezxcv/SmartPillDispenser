@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class CameraFeedScreen extends StatefulWidget {
   const CameraFeedScreen({super.key});
@@ -250,7 +251,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                             fit: BoxFit.cover,
                             loadingBuilder: (_, child, progress) => progress == null
                                 ? child
-                                : const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C))),
+                                : const Center(child: SmartDoseLoading(size: 60)),
                             errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
                           )
                         : _buildStreamPlaceholder(isOnline, context),
@@ -363,10 +364,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     _isCapturing
-                                        ? const SizedBox(
-                                            width: 14, height: 14,
-                                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                          )
+                                        ? const SmartDoseLoading(size: 20)
                                         : const Icon(LucideIcons.camera, size: 15, color: Colors.white),
                                     const SizedBox(width: 7),
                                     Text(
@@ -455,7 +453,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF00A36C)),
+                    child: SmartDoseLoading(size: 80),
                   );
                 }
 
@@ -535,7 +533,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     fit: BoxFit.contain,
                     loadingBuilder: (_, child, progress) => progress == null
                         ? child
-                        : const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C))),
+                        : const Center(child: SmartDoseLoading(size: 60)),
                     errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
                   )
                 else
@@ -644,10 +642,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   _isCapturing
-                                      ? const SizedBox(
-                                          width: 16, height: 16,
-                                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                        )
+                                      ? const SmartDoseLoading(size: 20)
                                       : const Icon(LucideIcons.camera, size: 18, color: Colors.white),
                                   const SizedBox(width: 8),
                                   Text(

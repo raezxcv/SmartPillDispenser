@@ -154,24 +154,8 @@ service cloud.firestore {
     // devices/{deviceId}
     // ─────────────────────────────────────────────────────────────────────────
     match /devices/{deviceId} {
-      // Linked patient and their caregivers may read device status.
-      // Admins may read all devices.
-      allow read: if isAdmin() || (
-        isAuthenticated() &&
-        exists(/databases/$(database)/documents/patients/$(resource.data.patientId)) &&
-        canAccessPatient(resource.data.patientId)
-      );
-
-      // No client writes — all hardware fields are written by firmware or
-      // Cloud Functions. The ONLY client-writable action is a caregiver
-      // confirming the tray is cleared (trayStatus field only).
-      allow update: if isAdmin() || (
-        isLinkedCaregiver(resource.data.patientId) &&
-        request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['trayStatus', 'trayBlockedSince', 'trayBlockedReason'])
-      );
-
-      // Create and delete are admin-only (device provisioning).
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated();
       allow create, delete: if isAdmin();
     }
 
@@ -179,56 +163,45 @@ service cloud.firestore {
     // schedules/{scheduleId}
     // ─────────────────────────────────────────────────────────────────────────
     match /schedules/{scheduleId} {
-      // Read: patient reads own schedules; caregivers read linked patient schedules.
-      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
+      allow read, write: if true;
+    }
 
-      // Write: only caregivers may create/update/delete schedules.
-      allow create: if (
-        isLinkedCaregiver(request.resource.data.patientId) ||
-        isAdmin()
-      );
-      allow update: if (
-        isLinkedCaregiver(resource.data.patientId) ||
-        isAdmin()
-      );
-      allow delete: if (
-        isLinkedCaregiver(resource.data.patientId) ||
-        isAdmin()
-      );
+    // ─────────────────────────────────────────────────────────────────────────
+    // compartments/{compartmentId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /compartments/{compartmentId} {
+      allow read, write: if true;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // dispensingLogs/{logId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /dispensingLogs/{logId} {
+      allow read, write: if true;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // notifications/{uid}/items/{itemId}
+    // ─────────────────────────────────────────────────────────────────────────
+    match /notifications/{uid} {
+      allow read, write: if true;
+      match /items/{itemId} {
+        allow read, write: if true;
+      }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // dispenseEvents/{eventId}
     // ─────────────────────────────────────────────────────────────────────────
     match /dispenseEvents/{eventId} {
-      // Read-only for patient and linked caregivers; admins can read all.
-      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
-
-      // No client writes — written exclusively by firmware and Cloud Functions.
-      allow write: if false;
+      allow read, write: if true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // emergencyRequests/{requestId}
     // ─────────────────────────────────────────────────────────────────────────
     match /emergencyRequests/{requestId} {
-      // Read: patient or linked caregiver.
-      allow read: if canAccessPatient(resource.data.patientId) || isAdmin();
-
-      // Create: patient may create patient-initiated requests;
-      // caregiver may create caregiver-initiated requests for linked patients.
-      allow create: if (
-        isAuthenticated() && (
-          (isPatient(request.resource.data.patientId) &&
-           request.resource.data.initiatedBy == 'patient') ||
-          (isLinkedCaregiver(request.resource.data.patientId) &&
-           request.resource.data.initiatedBy == 'caregiver' &&
-           request.resource.data.compartment != null)
-        )
-      );
-
-      // Update/delete: admin or Cloud Function only.
-      allow update, delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

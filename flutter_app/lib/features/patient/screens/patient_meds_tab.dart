@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class PatientMedsTab extends StatefulWidget {
   const PatientMedsTab({super.key});
@@ -15,6 +17,7 @@ class PatientMedsTab extends StatefulWidget {
 class _PatientMedsTabState extends State<PatientMedsTab> {
   int _selectedDateIndex = 0;
   late List<DateTime> _weekDays;
+  Timer? _countdownTimer;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
@@ -22,6 +25,19 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
   void initState() {
     super.initState();
     _generateWeekDays();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   void _generateWeekDays() {
@@ -38,15 +54,9 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _schedulesStream {
     final uid = _uid;
     if (uid == null) return null;
-    final startOfDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
     return FirebaseFirestore.instance
         .collection('schedules')
         .where('patientUid', isEqualTo: uid)
-        .where('isActive', isEqualTo: true)
-        .where('scheduledTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-        .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
-        .orderBy('scheduledTime')
         .snapshots();
   }
 
@@ -55,7 +65,21 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
     final editData = editDoc?.data();
 
     final nameCtrl = TextEditingController(text: editData?['medicationName'] ?? '');
-    final dosageCtrl = TextEditingController(text: editData?['dosage'] ?? '');
+
+    String initialDosageNum = '';
+    String selectedUnit = 'mg';
+    if (isEditing && editData?['dosage'] != null) {
+      final rawDosage = (editData!['dosage'] as String).trim();
+      final parts = rawDosage.split(' ');
+      if (parts.length >= 2) {
+        initialDosageNum = parts.first;
+        selectedUnit = parts.sublist(1).join(' ');
+      } else {
+        initialDosageNum = rawDosage;
+      }
+    }
+    final dosageCtrl = TextEditingController(text: initialDosageNum);
+
     String selectedComp = editData?['compartment'] ?? 'Compartment 1';
     TimeOfDay selectedTime = TimeOfDay(
       hour: editData?['scheduledTime'] != null
@@ -69,6 +93,11 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
 
     final cardBgColor = Theme.of(context).colorScheme.surface;
     final primaryTextColor = Theme.of(context).colorScheme.onSurface;
+
+    const availableUnits = ['tablet', 'pill', 'mg', 'ml', 'capsule', 'drop', 'g'];
+    bool isSaving = false;
+    String? nameError;
+    String? dosageError;
 
     showModalBottomSheet(
       context: context,
@@ -93,9 +122,52 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                       isEditing ? 'Edit Medication' : 'Add Medication',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primaryTextColor),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close_rounded, color: primaryTextColor.withValues(alpha: 0.6)),
-                      onPressed: () => Navigator.pop(ctx),
+                    Row(
+                      children: [
+                        if (isEditing)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+                            tooltip: 'Delete Medication',
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: ctx,
+                                builder: (dialogCtx) => AlertDialog(
+                                  title: const Text('Delete Medication?'),
+                                  content: Text('Are you sure you want to delete ${nameCtrl.text}? This action cannot be undone.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(dialogCtx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(dialogCtx, true),
+                                      child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                final medName = nameCtrl.text.trim();
+                                await editDoc.reference.delete();
+                                if (mounted) {
+                                  Navigator.pop(ctx);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('$medName deleted!'),
+                                      backgroundColor: const Color(0xFFEF4444),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded, color: primaryTextColor.withValues(alpha: 0.6)),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -103,24 +175,78 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                 TextField(
                   controller: nameCtrl,
                   style: TextStyle(color: primaryTextColor),
+                  onChanged: (_) {
+                    if (nameError != null) {
+                      setSheetState(() => nameError = null);
+                    }
+                  },
                   decoration: InputDecoration(
                     labelText: 'Medication Name',
                     hintText: 'e.g. Metformin',
+                    errorText: nameError,
                     prefixIcon: const Icon(Icons.medication_outlined, color: Color(0xFF00A36C)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
                 const SizedBox(height: 14),
-                TextField(
-                  controller: dosageCtrl,
-                  style: TextStyle(color: primaryTextColor),
+
+                // Unified Single Input Box for Dosage & Unit
+                InputDecorator(
                   decoration: InputDecoration(
                     labelText: 'Dosage',
-                    hintText: 'e.g. 500 mg',
+                    errorText: dosageError,
                     prefixIcon: const Icon(Icons.fitness_center_rounded, color: Color(0xFF00A36C)),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: dosageCtrl,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(color: primaryTextColor, fontSize: 16),
+                          onChanged: (_) {
+                            if (dosageError != null) {
+                              setSheetState(() => dosageError = null);
+                            }
+                          },
+                          decoration: const InputDecoration(
+                            hintText: 'e.g. 500',
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 8),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 22,
+                        width: 1,
+                        color: Theme.of(context).dividerColor,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: availableUnits.contains(selectedUnit) ? selectedUnit : 'mg',
+                          dropdownColor: cardBgColor,
+                          isDense: true,
+                          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold, fontSize: 15),
+                          icon: Icon(Icons.arrow_drop_down_rounded, color: primaryTextColor.withValues(alpha: 0.7)),
+                          items: availableUnits
+                              .map((u) => DropdownMenuItem(
+                                    value: u,
+                                    child: Text(u, style: TextStyle(color: primaryTextColor)),
+                                  ))
+                              .toList(),
+                          onChanged: (val) => setSheetState(() => selectedUnit = val!),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -203,14 +329,39 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00A36C),
+                      disabledBackgroundColor: const Color(0xFF00A36C),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                       elevation: 0,
                     ),
-                    onPressed: () async {
+                    onPressed: isSaving ? null : () async {
                       final name = nameCtrl.text.trim();
-                      final dosage = dosageCtrl.text.trim();
+                      final rawNum = dosageCtrl.text.trim();
                       final uid = _uid;
-                      if (name.isEmpty || uid == null) return;
+
+                      final hasNameErr = name.isEmpty;
+                      final hasDosageErr = rawNum.isEmpty;
+
+                      if (hasNameErr || hasDosageErr) {
+                        setSheetState(() {
+                          nameError = hasNameErr ? 'Medication name is required' : null;
+                          dosageError = hasDosageErr ? 'Dosage quantity is required' : null;
+                        });
+                        return;
+                      }
+
+                      final dosageStr = '$rawNum $selectedUnit';
+
+                      if (uid == null) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(
+                            content: Text('User session expired. Please sign in again.'),
+                            backgroundColor: Color(0xFFEF4444),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setSheetState(() => isSaving = true);
 
                       final compNum = selectedComp.split(' ').last;
                       final scheduledDateTime = DateTime(
@@ -221,10 +372,11 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                         selectedTime.minute,
                       );
 
-                      final docData = {
+                      final docData = <String, dynamic>{
                         'patientUid': uid,
+                        'patientId': uid,
                         'medicationName': name,
-                        'dosage': dosage.isEmpty ? '1 tablet' : dosage,
+                        'dosage': dosageStr,
                         'compartment': selectedComp,
                         'compCode': 'C$compNum',
                         'scheduledTime': Timestamp.fromDate(scheduledDateTime),
@@ -234,27 +386,43 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                         'updatedAt': FieldValue.serverTimestamp(),
                       };
 
-                      if (isEditing) {
-                        await editDoc.reference.update(docData);
-                      } else {
-                        docData['createdAt'] = FieldValue.serverTimestamp();
-                        await FirebaseFirestore.instance.collection('schedules').add(docData);
-                      }
+                      try {
+                        if (isEditing) {
+                          await editDoc.reference.update(docData);
+                        } else {
+                          docData['createdAt'] = FieldValue.serverTimestamp();
+                          await FirebaseFirestore.instance.collection('schedules').add(docData);
+                        }
 
-                      if (mounted) {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(isEditing ? '$name updated!' : '$name added to $selectedComp!'),
-                            backgroundColor: const Color(0xFF00A36C),
-                          ),
-                        );
+                        if (mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isEditing ? '$name updated!' : '$name added to $selectedComp!'),
+                              backgroundColor: const Color(0xFF00A36C),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setSheetState(() => isSaving = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to save medication: $e'),
+                              backgroundColor: const Color(0xFFEF4444),
+                            ),
+                          );
+                        }
                       }
                     },
-                    child: Text(
-                      isEditing ? 'Update Medication' : 'Save Medication',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+                    child: isSaving
+                        ? const SmartDoseLoading(size: 32, color: Colors.white)
+                        : Text(
+                            isEditing ? 'Update Medication' : 'Save Medication',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
                   ),
                 ),
               ],
@@ -266,10 +434,16 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
   }
 
   Future<void> _deleteSchedule(DocumentSnapshot<Map<String, dynamic>> doc) async {
-    await doc.reference.update({'isActive': false});
+    final medName = doc.data()?['medicationName'] ?? 'Medication';
+    await doc.reference.delete();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Medication removed from schedule.'), backgroundColor: Color(0xFF6B7280)),
+        SnackBar(
+          content: Text('$medName deleted.'),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
       );
     }
   }
@@ -450,16 +624,44 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _schedulesStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32),
-              child: CircularProgressIndicator(color: Color(0xFF00A36C)),
-            ),
-          );
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const Center(child: SmartDoseLoading(size: 140));
         }
 
-        final docs = snapshot.data?.docs ?? [];
+        final allDocs = snapshot.data?.docs ?? [];
+        final targetDay = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+
+        final docs = allDocs.where((doc) {
+          final data = doc.data();
+          final isActive = data['isActive'] ?? true;
+          if (!isActive) return false;
+          final ts = data['scheduledTime'] as Timestamp?;
+          if (ts == null) return false;
+          final schedDate = ts.toDate();
+          final schedDay = DateTime(schedDate.year, schedDate.month, schedDate.day);
+
+          // Cannot show medication on dates before its scheduled start date
+          if (targetDay.isBefore(schedDay)) return false;
+
+          final freq = (data['frequency'] as String? ?? 'Daily').trim().toLowerCase();
+          if (freq == 'daily') {
+            return true;
+          } else if (freq == 'weekly') {
+            return targetDay.weekday == schedDay.weekday;
+          } else {
+            // 'once' or single dose: must match exact same day
+            return targetDay.year == schedDay.year &&
+                   targetDay.month == schedDay.month &&
+                   targetDay.day == schedDay.day;
+          }
+        }).toList();
+
+        docs.sort((a, b) {
+          final tsA = a.data()['scheduledTime'] as Timestamp?;
+          final tsB = b.data()['scheduledTime'] as Timestamp?;
+          if (tsA == null || tsB == null) return 0;
+          return tsA.compareTo(tsB);
+        });
 
         if (docs.isEmpty) {
           return Container(
@@ -498,12 +700,13 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
   Widget _buildScheduleCard(DocumentSnapshot<Map<String, dynamic>> doc) {
     final med = doc.data() ?? {};
     final name = med['medicationName'] ?? 'Medication';
-    final dosage = med['dosage'] ?? '1 tablet';
+    final dosage = med['dosage'] ?? '500 mg';
     final comp = med['compartment'] ?? 'Compartment 1';
-    final compCode = med['compCode'] ?? 'C1';
     final status = med['status'] as String? ?? 'Upcoming';
     final ts = med['scheduledTime'] as Timestamp?;
-    final timeStr = ts != null ? DateFormat('hh:mm a').format(ts.toDate()) : '--:--';
+    final date = ts?.toDate();
+    final timeNumStr = date != null ? DateFormat('hh:mm').format(date) : '--:--';
+    final amPmStr = date != null ? DateFormat('a').format(date) : '';
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -535,6 +738,41 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
         statusBg = isDark ? const Color(0xFF064E3B) : const Color(0xFFE6F7F0);
         statusText = const Color(0xFF00A36C);
         statusIcon = Icons.access_time_rounded;
+    }
+
+    String statusLabel = status;
+    if (status.toLowerCase() == 'upcoming') {
+      final occurrenceDate = date != null
+          ? DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, date.hour, date.minute)
+          : null;
+      if (occurrenceDate != null) {
+        final now = DateTime.now();
+        final diff = occurrenceDate.difference(now);
+        if (diff.isNegative) {
+          if (now.difference(occurrenceDate).inHours >= 2) {
+            statusLabel = 'Missed';
+            statusBg = isDark ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2);
+            statusText = const Color(0xFFEF4444);
+            statusIcon = Icons.cancel_outlined;
+          } else {
+            statusLabel = 'Due now';
+            statusBg = isDark ? const Color(0xFF78350F) : const Color(0xFFFEF3C7);
+            statusText = const Color(0xFFF59E0B);
+            statusIcon = Icons.access_time_rounded;
+          }
+        } else {
+          final h = diff.inHours;
+          final m = diff.inMinutes % 60;
+          final s = diff.inSeconds % 60;
+          if (h > 0) {
+            statusLabel = 'In ${h}h ${m}m';
+          } else if (m > 0) {
+            statusLabel = 'In ${m}m ${s}s';
+          } else {
+            statusLabel = 'In ${s}s';
+          }
+        }
+      }
     }
 
     return Dismissible(
@@ -583,18 +821,35 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFE6F7F0),
+                  color: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.5) : const Color(0xFFE6F7F0),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF00A36C).withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(timeStr.split(' ')[0],
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFF00A36C))),
-                    Text(timeStr.length > 5 ? timeStr.split(' ').last : '',
-                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFF00A36C))),
-                    const SizedBox(height: 1),
-                    Text(compCode, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF00A36C))),
+                    Text(
+                      timeNumStr,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF00A36C),
+                        letterSpacing: -0.3,
+                        height: 1.1,
+                      ),
+                    ),
+                    Text(
+                      amPmStr,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF00A36C),
+                        height: 1.1,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -617,7 +872,7 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                         children: [
                           Icon(statusIcon, color: statusText, size: 14),
                           const SizedBox(width: 4),
-                          Text(status,
+                          Text(statusLabel,
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: statusText)),
                         ],
                       ),
@@ -625,7 +880,30 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: secondaryTextColor, size: 24),
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
+                tooltip: 'Delete Medication',
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Medication?'),
+                      content: Text('Are you sure you want to delete $name?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete', style: TextStyle(color: Color(0xFFEF4444))),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    _deleteSchedule(doc);
+                  }
+                },
+              ),
+              Icon(Icons.chevron_right_rounded, color: secondaryTextColor, size: 20),
             ],
           ),
         ),

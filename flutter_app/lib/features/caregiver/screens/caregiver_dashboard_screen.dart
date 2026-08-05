@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../pairing/services/pairing_service.dart';
 import '../../pairing/screens/connect_patient_screen.dart';
 import '../../patient/screens/patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class CaregiverDashboardScreen extends StatefulWidget {
   final VoidCallback onSwitchRole;
@@ -58,7 +59,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444)),
-            onPressed: widget.onSwitchRole,
+            onPressed: () => _confirmSignOut(context),
             tooltip: 'Log Out',
           ),
         ],
@@ -83,7 +84,7 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: Padding(
                           padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(color: emerald),
+                          child: SmartDoseLoading(size: 60),
                         ));
                       }
 
@@ -333,6 +334,102 @@ class _CaregiverDashboardScreenState extends State<CaregiverDashboardScreen> {
           const SizedBox(height: 12),
           Text(label, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: primaryTextColor)),
         ],
+      ),
+    );
+  }
+
+  void _confirmSignOut(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: cardBgColor,
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 32),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Log Out of SmartDose?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: primaryTextColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Are you sure you want to log out? You will need to sign in again to access the caregiver portal.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: secondaryTextColor,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: theme.dividerColor, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      widget.onSwitchRole();
+                    },
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 /// SplashScreen — App loader screen with lighter, vibrant green gradient background.
 class SplashScreen extends StatefulWidget {
@@ -58,35 +59,22 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121214) : Colors.white,
+      backgroundColor: const Color(0xFF00A36C),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF064E3B),
-                    Color(0xFF18181B),
-                    Color(0xFF121214),
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                )
-              : const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFC5F2DC), // Vibrant light green top
-                    Color(0xFFE8F8F0), // Soft mint middle
-                    Color(0xFFFFFFFF), // Pure white bottom
-                  ],
-                  stops: [0.0, 0.45, 1.0],
-                ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF00C87F),
+              Color(0xFF00A36C),
+              Color(0xFF026845),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
         ),
         child: SafeArea(
           child: FadeTransition(
@@ -98,27 +86,12 @@ class _SplashScreenState extends State<SplashScreen>
                 children: [
                   const Spacer(),
 
-                  // App Logo in Circular Glowing Container
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF00A36C),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00A36C).withValues(alpha: 0.3),
-                          blurRadius: 28,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/Smart Dose Logo.png',
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                  // App Logo (transparent background)
+                  Image.asset(
+                    'assets/Smart Dose Logo No Bg.png',
+                    width: 130,
+                    height: 130,
+                    fit: BoxFit.contain,
                   ),
 
                   const SizedBox(height: 28),
@@ -129,37 +102,31 @@ class _SplashScreenState extends State<SplashScreen>
                     style: GoogleFonts.manrope(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : const Color(0xFF1F2937),
+                      color: Colors.white,
                       letterSpacing: -0.5,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  // Tagline
-                  const Text(
+                  // Tagline / Subtitle
+                  Text(
                     'Your Smart Medication Companion',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFF00A36C),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.3,
                     ),
                   ),
 
+                  const SizedBox(height: 8),
+
+                  // SmartDose Lottie Loader (white animation)
+                  const SmartDoseLoading(size: 150, color: Colors.white),
+
                   const Spacer(),
-
-                  // Circular Progress Loader
-                  const SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: CircularProgressIndicator(
-                      color: Color(0xFF00A36C),
-                      strokeWidth: 3,
-                    ),
-                  ),
-
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

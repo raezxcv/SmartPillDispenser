@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'patient_alerts_tab.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class CompartmentInventoryScreen extends StatelessWidget {
   const CompartmentInventoryScreen({super.key});
@@ -159,7 +160,7 @@ class CompartmentInventoryScreen extends StatelessWidget {
         stream: _compartmentsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF00A36C)));
+            return const Center(child: SmartDoseLoading(size: 140));
           }
 
           final docs = snapshot.data?.docs ?? [];

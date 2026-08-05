@@ -6,6 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../services/pairing_service.dart';
 import 'connection_requests_screen.dart';
 import 'connected_caregivers_screen.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class PairCaregiverScreen extends StatefulWidget {
   const PairCaregiverScreen({super.key});
@@ -201,7 +202,7 @@ class _PairCaregiverScreenState extends State<PairCaregiverScreen> {
                     const SizedBox(
                       height: 220,
                       child: Center(
-                        child: CircularProgressIndicator(color: emerald),
+                        child: SmartDoseLoading(size: 80),
                       ),
                     )
                   else if (_currentToken != null) ...[

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'compartment_inventory_screen.dart';
 import 'camera_feed_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class PatientHomeTab extends StatefulWidget {
   final String displayName;
@@ -82,29 +83,18 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _schedulesStream {
     final uid = _uid;
     if (uid == null) return null;
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final todayEnd = todayStart.add(const Duration(days: 1));
     return FirebaseFirestore.instance
         .collection('schedules')
         .where('patientUid', isEqualTo: uid)
-        .where('isActive', isEqualTo: true)
-        .where('scheduledTime', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
-        .where('scheduledTime', isLessThan: Timestamp.fromDate(todayEnd))
-        .orderBy('scheduledTime')
         .snapshots();
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>>? get _todayLogsStream {
     final uid = _uid;
     if (uid == null) return null;
-    final todayStart = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-    final todayEnd = todayStart.add(const Duration(days: 1));
     return FirebaseFirestore.instance
         .collection('dispensingLogs')
         .where('patientUid', isEqualTo: uid)
-        .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
-        .where('timestamp', isLessThan: Timestamp.fromDate(todayEnd))
         .snapshots();
   }
 
@@ -140,31 +130,54 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     setState(() => _dispatchingEmergency = true);
     try {
       if (_deviceId != null) {
-        await FirebaseFirestore.instance.collection('devices').doc(_deviceId).update({
-          'emergencyDispense': true,
-          'emergencyRequestedAt': FieldValue.serverTimestamp(),
-          'emergencyRequestedBy': uid,
-        });
+        try {
+          await FirebaseFirestore.instance.collection('devices').doc(_deviceId).update({
+            'emergencyDispense': true,
+            'emergencyRequestedAt': FieldValue.serverTimestamp(),
+            'emergencyRequestedBy': uid,
+          });
+        } catch (e) {
+          debugPrint('Device status update warning: $e');
+        }
       }
+
+      // Add emergency request record
+      await FirebaseFirestore.instance.collection('emergencyRequests').add({
+        'patientId': uid,
+        'patientUid': uid,
+        'initiatedBy': 'patient',
+        'status': 'pending',
+        'requestedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Add to dispensing logs for history
       await FirebaseFirestore.instance.collection('dispensingLogs').add({
         'patientUid': uid,
+        'patientId': uid,
         'medicationName': 'Emergency Request',
         'type': 'emergency',
         'status': 'requested',
         'timestamp': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
       });
-      await FirebaseFirestore.instance
-          .collection('notifications')
-          .doc(uid)
-          .collection('items')
-          .add({
-        'title': 'Emergency dispense requested',
-        'body': 'An emergency dispense request was sent to the device.',
-        'type': 'emergency',
-        'isRead': false,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+
+      // Add notification item
+      try {
+        await FirebaseFirestore.instance
+            .collection('notifications')
+            .doc(uid)
+            .collection('items')
+            .add({
+          'title': 'Emergency dispense requested',
+          'body': 'An emergency dispense request was sent to the device.',
+          'type': 'emergency',
+          'isRead': false,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        debugPrint('Notification add warning: $e');
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -184,7 +197,10 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Error triggering emergency dispense: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
         );
       }
     } finally {
@@ -224,17 +240,52 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _schedulesStream,
       builder: (context, schedSnap) {
-        final schedDocs = schedSnap.data?.docs ?? [];
+        final allSchedDocs = schedSnap.data?.docs ?? [];
         final now = DateTime.now();
+        final todayStart = DateTime(now.year, now.month, now.day);
+        final todayEnd = todayStart.add(const Duration(days: 1));
+
+        final schedDocs = allSchedDocs.where((doc) {
+          final data = doc.data();
+          if ((data['isActive'] ?? true) != true) return false;
+          final ts = data['scheduledTime'] as Timestamp?;
+          if (ts == null) return false;
+          final schedDate = ts.toDate();
+          final schedDay = DateTime(schedDate.year, schedDate.month, schedDate.day);
+
+          if (todayStart.isBefore(schedDay)) return false;
+
+          final freq = (data['frequency'] as String? ?? 'Daily').trim().toLowerCase();
+          if (freq == 'daily') {
+            return true;
+          } else if (freq == 'weekly') {
+            return todayStart.weekday == schedDay.weekday;
+          } else {
+            return todayStart.year == schedDay.year &&
+                   todayStart.month == schedDay.month &&
+                   todayStart.day == schedDay.day;
+          }
+        }).toList();
+
+        schedDocs.sort((a, b) {
+          final tsA = a.data()['scheduledTime'] as Timestamp?;
+          final tsB = b.data()['scheduledTime'] as Timestamp?;
+          if (tsA == null || tsB == null) return 0;
+          return tsA.compareTo(tsB);
+        });
 
         // Find next upcoming medication whose scheduled time is strictly in the future
         Map<String, dynamic>? upcomingMed;
         for (final doc in schedDocs) {
           final data = doc.data();
           final ts = data['scheduledTime'] as Timestamp?;
-          if (ts != null && ts.toDate().isAfter(now)) {
-            upcomingMed = {...data, 'id': doc.id};
-            break;
+          if (ts != null) {
+            final t = ts.toDate();
+            final todayTime = DateTime(now.year, now.month, now.day, t.hour, t.minute);
+            if (todayTime.isAfter(now)) {
+              upcomingMed = {...data, 'id': doc.id, 'scheduledTime': Timestamp.fromDate(todayTime)};
+              break;
+            }
           }
         }
 
@@ -251,7 +302,16 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: _todayLogsStream,
           builder: (context, logsSnap) {
-            final logs = logsSnap.data?.docs ?? [];
+            final allLogsDocs = logsSnap.data?.docs ?? [];
+            final logs = allLogsDocs.where((doc) {
+              final data = doc.data();
+              final ts = data['timestamp'] as Timestamp?;
+              if (ts == null) return false;
+              final date = ts.toDate();
+              return (date.isAfter(todayStart.subtract(const Duration(seconds: 1))) || date.isAtSameMomentAs(todayStart)) &&
+                     date.isBefore(todayEnd);
+            }).toList();
+
             final taken = logs.where((d) => d.data()['status'] == 'taken').length;
             final missed = logs.where((d) => d.data()['status'] == 'missed').length;
             final total = schedDocs.isEmpty ? 0 : schedDocs.length;
@@ -637,11 +697,7 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
         ),
         onPressed: _dispatchingEmergency ? null : _onEmergencyDispense,
         icon: _dispatchingEmergency
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)),
-              )
+            ? const SmartDoseLoading(size: 36)
             : const Icon(Icons.notifications_active_outlined, size: 20),
         label: Text(
           _dispatchingEmergency ? 'Sending Emergency Request…' : 'Emergency Dispense',

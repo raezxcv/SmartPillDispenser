@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/pairing_service.dart';
 import 'confirm_pairing_dialog.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class ConnectPatientScreen extends StatefulWidget {
   const ConnectPatientScreen({super.key});
@@ -169,7 +170,7 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
       ),
       body: _isCheckingPermission
           ? const Center(
-              child: CircularProgressIndicator(color: emerald),
+              child: SmartDoseLoading(size: 80),
             )
           : !_hasCameraPermission
               ? _buildPermissionDeniedState(emerald)
@@ -248,7 +249,7 @@ class _ConnectPatientScreenState extends State<ConnectPatientScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              CircularProgressIndicator(color: emerald),
+                              SmartDoseLoading(size: 80),
                               SizedBox(height: 16),
                               Text(
                                 'Validating QR code...',

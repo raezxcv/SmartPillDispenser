@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/pairing_service.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class ConfirmPairingDialog extends StatefulWidget {
   final Map<String, dynamic> patientData;
@@ -179,10 +180,11 @@ class _ConfirmPairingDialogState extends State<ConfirmPairingDialog> {
                 onPressed: _isSubmitting ? null : _sendRequest,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: emerald,
+                  disabledBackgroundColor: emerald,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const SmartDoseLoading(size: 32, color: Colors.white)
                     : const Text(
                         'Send Connection Request',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),

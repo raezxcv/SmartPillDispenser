@@ -48,7 +48,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
   void _showEditProfileSheet(Map<String, dynamic>? data) {
     final nameCtrl = TextEditingController(text: data?['name'] ?? widget.fallbackName);
     final phoneCtrl = TextEditingController(text: data?['phone'] ?? '');
-    final dobCtrl = TextEditingController(text: data?['dob'] ?? '');
+    final initialDobStr = (data?['dob'] ?? data?['dateOfBirth'] ?? '').toString().trim();
+    final dobCtrl = TextEditingController(text: initialDobStr);
     final cardColor = Theme.of(context).colorScheme.surface;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
@@ -193,11 +194,12 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     final messenger = ScaffoldMessenger.of(context);
                     final uid = _uid;
                     if (uid != null) {
-                      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                      await FirebaseFirestore.instance.collection('users').doc(uid).set({
                         'name': nameCtrl.text.trim(),
                         'phone': phoneCtrl.text.trim(),
                         'dob': dobCtrl.text.trim(),
-                      });
+                        'dateOfBirth': dobCtrl.text.trim(),
+                      }, SetOptions(merge: true));
                     }
                     if (mounted) {
                       Navigator.pop(ctx);
@@ -236,8 +238,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       builder: (context, snapshot) {
         final userData = snapshot.data?.data();
         final name = userData?['name'] ?? widget.fallbackName;
-        final phone = userData?['phone'] ?? '+351 912 004 118';
-        final dob = userData?['dob'] ?? 'Not set';
+        final phone = (userData?['phone'] as String? ?? '').isNotEmpty ? userData!['phone'] : 'No phone';
+        final rawDob = (userData?['dob'] ?? userData?['dateOfBirth'] ?? '').toString().trim();
+        String dob = 'Not set';
+        if (rawDob.isNotEmpty) {
+          try {
+            final parsedDate = DateTime.parse(rawDob);
+            dob = DateFormat('MMM d, yyyy').format(parsedDate);
+          } catch (_) {
+            dob = rawDob;
+          }
+        }
 
         final initials = name.trim().isNotEmpty
             ? name.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
@@ -574,7 +585,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   ),
-                  onPressed: widget.onSignOut,
+                  onPressed: () => _confirmSignOut(context),
                   icon: const Icon(Icons.logout_rounded, size: 20),
                   label: const Text(
                     'Log Out',
@@ -587,6 +598,102 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
           ),
         );
       },
+    );
+  }
+
+  void _confirmSignOut(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final primaryTextColor = theme.colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: cardBgColor,
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 32),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Log Out of SmartDose?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: primaryTextColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Are you sure you want to log out? You will need to sign in again to access your account.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: secondaryTextColor,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: theme.dividerColor, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF4444),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      widget.onSignOut();
+                    },
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

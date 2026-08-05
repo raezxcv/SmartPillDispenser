@@ -14,6 +14,7 @@ import 'features/auth/providers/auth_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'features/patient/screens/patient_home_screen.dart';
 import 'features/caregiver/screens/caregiver_dashboard_screen.dart';
+import 'shared/widgets/smartdose_loading.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -622,43 +623,30 @@ class _SignupFlowState extends State<_SignupFlow>
 
                                       // Continue / Create Account button
                                       Expanded(
-                                        child: _isStepLoading
-                                            ? Container(
-                                                height: 52,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFD1D5DB),
-                                                  borderRadius: BorderRadius.circular(26),
-                                                ),
-                                                child: const Center(
-                                                  child: SizedBox(
-                                                    width: 22, height: 22,
-                                                    child: CircularProgressIndicator(
-                                                        color: Colors.white, strokeWidth: 2.5),
-                                                  ),
-                                                ),
-                                              )
-                                            : Container(
-                                                height: 52,
-                                                decoration: BoxDecoration(
-                                                  gradient: const LinearGradient(
-                                                    colors: [Color(0xFF00C882), Color(0xFF00A36C)],
-                                                  ),
-                                                  borderRadius: BorderRadius.circular(26),
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: const Color(0xFF00A36C).withValues(alpha: 0.35),
-                                                      blurRadius: 14,
-                                                      offset: const Offset(0, 5),
-                                                    ),
-                                                  ],
-                                                ),
-                                                child: Material(
-                                                  color: Colors.transparent,
-                                                  child: InkWell(
-                                                    onTap: _stepSubmit,
-                                                    borderRadius: BorderRadius.circular(26),
-                                                    child: Center(
-                                                      child: Row(
+                                        child: Container(
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            gradient: const LinearGradient(
+                                              colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                                            ),
+                                            borderRadius: BorderRadius.circular(26),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                                                blurRadius: 14,
+                                                offset: const Offset(0, 5),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: _isStepLoading ? null : _stepSubmit,
+                                              borderRadius: BorderRadius.circular(26),
+                                              child: Center(
+                                                child: _isStepLoading
+                                                    ? const SmartDoseLoading(size: 40, color: Colors.white)
+                                                    : Row(
                                                         mainAxisAlignment: MainAxisAlignment.center,
                                                         children: [
                                                           Text(
@@ -679,10 +667,10 @@ class _SignupFlowState extends State<_SignupFlow>
                                                           ),
                                                         ],
                                                       ),
-                                                    ),
-                                                  ),
-                                                ),
                                               ),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),

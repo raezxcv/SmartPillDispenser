@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'patient_home_tab.dart';
 import 'patient_meds_tab.dart';
 import 'patient_history_tab.dart';
@@ -29,6 +29,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   Map<String, dynamic>? _userFirestoreData;
   StreamSubscription? _userSub;
   StreamSubscription? _unreadSub;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -152,123 +153,136 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (_tabHistory.length > 1) {
-          setState(() {
-            _tabHistory.removeLast();
-            _currentIndex = _tabHistory.last;
-          });
-        } else if (_currentIndex != 0) {
+        if (_currentIndex != 0) {
           setState(() {
             _currentIndex = 0;
             _tabHistory.clear();
             _tabHistory.add(0);
           });
+        } else {
+          final now = DateTime.now();
+          if (_lastBackPressTime == null ||
+              now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+            _lastBackPressTime = now;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.touch_app_rounded, color: Colors.white, size: 18),
+                    SizedBox(width: 8),
+                    Text('Press back again to exit'),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF374151),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.only(bottom: 80, left: 40, right: 40),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+            );
+          } else {
+            SystemNavigator.pop();
+          }
         }
       },
       child: Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: [
-            PatientHomeTab(
-              displayName: _displayName,
-              userInitials: _userInitials,
-              onGoToMeds: () => _switchTab(1),
-              onGoToHistory: () => _switchTab(2),
-              onGoToAlerts: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PatientAlertsTab(onMarkAllRead: _markAllNotificationsRead),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: SafeArea(
+          child: IndexedStack(
+            index: _currentIndex,
+            children: [
+              PatientHomeTab(
+                displayName: _displayName,
+                userInitials: _userInitials,
+                onGoToMeds: () => _switchTab(1),
+                onGoToHistory: () => _switchTab(2),
+                onGoToAlerts: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PatientAlertsTab(onMarkAllRead: _markAllNotificationsRead),
+                  ),
                 ),
+                onGoToProfile: () => _switchTab(3),
+                unreadCount: _unreadAlertsCount,
               ),
-              onGoToProfile: () => _switchTab(3),
-              unreadCount: _unreadAlertsCount,
-            ),
-            const PatientMedsTab(),
-            const PatientHistoryTab(),
-            PatientProfileTab(
-              fallbackName: _displayName,
-              onSignOut: widget.onSignOut,
-            ),
-          ],
+              const PatientMedsTab(),
+              const PatientHistoryTab(),
+              PatientProfileTab(
+                fallbackName: _displayName,
+                onSignOut: widget.onSignOut,
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+                blurRadius: 16,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
+              _buildNavItem(1, Icons.calendar_month_rounded, Icons.calendar_today_outlined, 'Meds'),
+              _buildNavItem(2, Icons.history_rounded, Icons.history_toggle_off_rounded, 'History'),
+              _buildNavItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(0, LucideIcons.home, 'Home'),
-            _buildNavItem(1, LucideIcons.calendar, 'Meds'),
-            _buildNavItem(2, LucideIcons.history, 'History'),
-            _buildNavItem(3, LucideIcons.user, 'Profile'),
-          ],
-        ),
-      ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
+  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label, {int badgeCount = 0}) {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primaryColor = const Color(0xFF00A36C);
-    final unselectedColor = theme.colorScheme.onSurface.withValues(alpha: 0.55);
-    final activePillColor = isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5);
+    const primaryColor = Color(0xFF00A36C);
+    final unselectedColor = theme.colorScheme.onSurface.withValues(alpha: 0.5);
 
     return InkWell(
       onTap: () => _switchTab(index),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? activePillColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    icon,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedScale(
+                  scale: isSelected ? 1.15 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    isSelected ? activeIcon : inactiveIcon,
                     color: isSelected ? primaryColor : unselectedColor,
-                    size: 22,
+                    size: 24,
                   ),
-                  if (badgeCount > 0 && index == 3)
-                    Positioned(
-                      top: -3,
-                      right: -3,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: theme.colorScheme.surface, width: 1.5),
-                        ),
+                ),
+                if (badgeCount > 0 && index == 3)
+                  Positioned(
+                    top: -3,
+                    right: -3,
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: theme.colorScheme.surface, width: 1.5),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(

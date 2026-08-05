@@ -39,6 +39,7 @@ dependencies:
   uuid: ^4.6.0
   google_fonts: ^8.2.1
   lucide_icons_flutter: ^3.1.15
+  lottie: ^3.1.0
   # flutter_webrtc removed temporarily — plugin has compileSdk conflict (API 31 vs 34)
   # Re-add when plugin fixes: https://github.com/flutter-webrtc/flutter-webrtc/issues
 
@@ -64,3 +65,5 @@ flutter:
     - assets/Smart Dose Logo.png
     - assets/Smart Dose App Logo.png
     - assets/Smart Dose Logo No Bg.png
+    - assets/SmartDose Loading.json
+    - assets/smartdose_loading.json

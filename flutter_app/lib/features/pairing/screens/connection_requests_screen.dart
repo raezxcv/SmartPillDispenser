@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/pairing_service.dart';
+import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class ConnectionRequestsScreen extends StatefulWidget {
   const ConnectionRequestsScreen({super.key});
@@ -133,7 +134,7 @@ class _ConnectionRequestsScreenState extends State<ConnectionRequestsScreen> {
               stream: _pairingService.getPendingRequestsStream(_uid!),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: emerald));
+                  return const Center(child: SmartDoseLoading(size: 80));
                 }
 
                 final requests = snapshot.data ?? [];

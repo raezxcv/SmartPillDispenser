@@ -523,7 +523,11 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00A36C),
+                  gradient: const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                  ),
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
@@ -561,49 +565,67 @@ class _PatientMedsTabState extends State<PatientMedsTab> {
     final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       decoration: BoxDecoration(
         color: cardBgColor,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 16, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: List.generate(_weekDays.length, (idx) {
           final date = _weekDays[idx];
           final isSelected = idx == _selectedDateIndex;
-          final isToday = () {
-            final now = DateTime.now();
-            return date.year == now.year && date.month == now.month && date.day == now.day;
-          }();
 
           return GestureDetector(
             onTap: () => setState(() => _selectedDateIndex = idx),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 44,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              width: 46,
+              padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF00A36C) : Colors.transparent,
-                borderRadius: BorderRadius.circular(22),
+                gradient: isSelected
+                    ? const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                      )
+                    : null,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [],
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     dayLabels[idx],
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white70 : secondaryTextColor,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : secondaryTextColor,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '${date.day}',
                     style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: isToday ? FontWeight.w900 : FontWeight.bold,
-                      color: isSelected ? Colors.white : (isToday ? const Color(0xFF00A36C) : primaryTextColor),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: isSelected ? Colors.white : primaryTextColor,
                     ),
                   ),
                 ],

@@ -21,31 +21,36 @@ class AppTheme {
   static const Color statusWarning = Color(0xFFF59E0B);
   static const Color statusError = Color(0xFFEF4444);
 
-  static TextTheme get _manropeTextTheme => GoogleFonts.manropeTextTheme(
-        const TextTheme(
-          headlineMedium: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: textPrimary),
-          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textPrimary),
-          titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textPrimary),
-          bodyLarge: TextStyle(fontSize: 18, color: textPrimary),
-          bodyMedium: TextStyle(fontSize: 16, color: textSecondary),
-          labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-      );
+  static const String fontFamilyName = 'PlusJakartaSans';
 
-  static TextTheme get _darkManropeTextTheme => GoogleFonts.manropeTextTheme(
-        const TextTheme(
-          headlineMedium: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: textPrimaryDark),
-          titleLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textPrimaryDark),
-          titleMedium: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textPrimaryDark),
-          bodyLarge: TextStyle(fontSize: 18, color: textPrimaryDark),
-          bodyMedium: TextStyle(fontSize: 16, color: textSecondaryDark),
-          labelLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-      );
+  static TextTheme get _plusJakartaSansTextTheme {
+    final base = GoogleFonts.plusJakartaSansTextTheme(ThemeData.light().textTheme);
+    return base.apply(fontFamily: fontFamilyName).copyWith(
+      headlineMedium: base.headlineMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 26, fontWeight: FontWeight.bold, color: textPrimary),
+      titleLarge: base.titleLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 22, fontWeight: FontWeight.bold, color: textPrimary),
+      titleMedium: base.titleMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 18, fontWeight: FontWeight.w600, color: textPrimary),
+      bodyLarge: base.bodyLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 18, color: textPrimary),
+      bodyMedium: base.bodyMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 16, color: textSecondary),
+      labelLarge: base.labelLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    );
+  }
+
+  static TextTheme get _darkPlusJakartaSansTextTheme {
+    final base = GoogleFonts.plusJakartaSansTextTheme(ThemeData.dark().textTheme);
+    return base.apply(fontFamily: fontFamilyName).copyWith(
+      headlineMedium: base.headlineMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 26, fontWeight: FontWeight.bold, color: textPrimaryDark),
+      titleLarge: base.titleLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 22, fontWeight: FontWeight.bold, color: textPrimaryDark),
+      titleMedium: base.titleMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 18, fontWeight: FontWeight.w600, color: textPrimaryDark),
+      bodyLarge: base.bodyLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 18, color: textPrimaryDark),
+      bodyMedium: base.bodyMedium?.copyWith(fontFamily: fontFamilyName, fontSize: 16, color: textSecondaryDark),
+      labelLarge: base.labelLarge?.copyWith(fontFamily: fontFamilyName, fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    );
+  }
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamilyName,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryEmerald,
@@ -56,7 +61,8 @@ class AppTheme {
         onSurface: textPrimary,
       ),
       scaffoldBackgroundColor: backgroundLight,
-      textTheme: _manropeTextTheme,
+      textTheme: _plusJakartaSansTextTheme,
+      primaryTextTheme: _plusJakartaSansTextTheme,
       cardTheme: CardThemeData(
         color: cardWhite,
         elevation: 1,
@@ -90,7 +96,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 54),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold),
+          textStyle: const TextStyle(fontFamily: fontFamilyName, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
@@ -106,6 +112,7 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamilyName,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryEmerald,
@@ -116,7 +123,8 @@ class AppTheme {
         onSurface: textPrimaryDark,
       ),
       scaffoldBackgroundColor: backgroundDark,
-      textTheme: _darkManropeTextTheme,
+      textTheme: _darkPlusJakartaSansTextTheme,
+      primaryTextTheme: _darkPlusJakartaSansTextTheme,
       cardTheme: CardThemeData(
         color: cardDark,
         elevation: 1,
@@ -150,7 +158,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 54),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold),
+          textStyle: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(

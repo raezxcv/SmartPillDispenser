@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -10,6 +14,7 @@ import '../../pairing/screens/connected_caregivers_screen.dart';
 import 'compartment_inventory_screen.dart';
 import 'camera_feed_screen.dart';
 import 'patient_alerts_tab.dart';
+import '../../../shared/widgets/smartdose_loading.dart';
 
 class PatientProfileTab extends ConsumerStatefulWidget {
   final VoidCallback onSignOut;
@@ -28,13 +33,17 @@ class PatientProfileTab extends ConsumerStatefulWidget {
 class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
   bool _pushNotificationsEnabled = true;
   bool _smsToCaregiverEnabled = true;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userProfileStream;
 
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
-  Stream<DocumentSnapshot<Map<String, dynamic>>>? get _userProfileStream {
+  @override
+  void initState() {
+    super.initState();
     final uid = _uid;
-    if (uid == null) return null;
-    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+    if (uid != null) {
+      _userProfileStream = FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+    }
   }
 
   Future<void> _updatePreferences(String key, bool val) async {
@@ -45,11 +54,38 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
     });
   }
 
+  static String _getInitials(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'SD';
+    final parts = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
+      return parts.first.length >= 2
+          ? parts.first.substring(0, 2).toUpperCase()
+          : parts.first[0].toUpperCase();
+    }
+    return 'SD';
+  }
+
+  static const List<List<Color>> _avatarGradients = [
+    [Color(0xFF00C882), Color(0xFF00A36C)], // Emerald Mint
+    [Color(0xFF06B6D4), Color(0xFF0891B2)], // Ocean Cyan
+    [Color(0xFF8B5CF6), Color(0xFF6D28D9)], // Royal Purple
+    [Color(0xFFEC4899), Color(0xFFDB2777)], // Vibrant Pink
+    [Color(0xFFF43F5E), Color(0xFFE11D48)], // Coral Rose
+    [Color(0xFF475569), Color(0xFF1E293B)], // Midnight Slate
+  ];
+
   void _showEditProfileSheet(Map<String, dynamic>? data) {
     final nameCtrl = TextEditingController(text: data?['name'] ?? widget.fallbackName);
     final phoneCtrl = TextEditingController(text: data?['phone'] ?? '');
     final initialDobStr = (data?['dob'] ?? data?['dateOfBirth'] ?? '').toString().trim();
     final dobCtrl = TextEditingController(text: initialDobStr);
+    final photoUrlCtrl = TextEditingController(
+      text: data?['photoUrl'] ?? data?['profilePhotoUrl'] ?? FirebaseAuth.instance.currentUser?.photoURL ?? '',
+    );
+    int selectedGradientIdx = (data?['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
     final cardColor = Theme.of(context).colorScheme.surface;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
@@ -60,165 +96,549 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       } catch (_) {}
     }
 
+    bool isSaving = false;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => Container(
-          padding: EdgeInsets.fromLTRB(
-              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, setSheetState) {
+          final initials = _getInitials(nameCtrl.text.isEmpty ? widget.fallbackName : nameCtrl.text);
+          final activeGradient = _avatarGradients[selectedGradientIdx];
+
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+            ),
+            padding: EdgeInsets.fromLTRB(
+                24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    'Edit Profile',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Edit Profile',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Avatar Preview with Dynamic Gradient & Initials
+                  Center(
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 92,
+                          height: 92,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(colors: activeGradient),
+                            boxShadow: [
+                              BoxShadow(
+                                color: activeGradient.last.withValues(alpha: 0.35),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(46),
+                            child: _buildAvatarImage(photoUrlCtrl.text, initials, 92),
+                          ),
+                        ),
+                        // Upload Camera Icon Button on Bottom Right
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () => _showUploadImageDialog(ctx, photoUrlCtrl, setSheetState),
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00A36C),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: cardColor, width: 2.5),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.25),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
-                    onPressed: () => Navigator.pop(ctx),
+
+                  const SizedBox(height: 16),
+
+                  // Avatar Gradient Picker
+                  Text(
+                    'Avatar Background Color',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor.withValues(alpha: 0.7)),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_avatarGradients.length, (i) {
+                      final isSelected = selectedGradientIdx == i;
+                      return GestureDetector(
+                        onTap: () => setSheetState(() => selectedGradientIdx = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.symmetric(horizontal: 5),
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(colors: _avatarGradients[i]),
+                            border: Border.all(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              width: 2.5,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: _avatarGradients[i].last.withValues(alpha: 0.5),
+                                      blurRadius: 8,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                              : null,
+                        ),
+                      );
+                    }),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  TextField(
+                    controller: nameCtrl,
+                    style: TextStyle(color: textColor),
+                    onChanged: (_) => setSheetState(() {}),
+                    decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF00A36C)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    style: TextStyle(color: textColor),
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF00A36C)),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Date of Birth Date Picker
+                  InkWell(
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: ctx,
+                        initialDate: initialDob ?? DateTime(now.year - 30),
+                        firstDate: DateTime(1920),
+                        lastDate: now,
+                        builder: (c, child) => Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              primary: const Color(0xFF00A36C),
+                            ),
+                          ),
+                          child: child!,
+                        ),
+                      );
+                      if (picked != null) {
+                        final formatted = DateFormat('yyyy-MM-dd').format(picked);
+                        setSheetState(() {
+                          dobCtrl.text = formatted;
+                          initialDob = picked;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cake_outlined, color: Color(0xFF00A36C)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date of Birth',
+                                  style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6)),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  dobCtrl.text.isEmpty ? 'Select Date of Birth' : dobCtrl.text,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: dobCtrl.text.isEmpty
+                                        ? textColor.withValues(alpha: 0.4)
+                                        : textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.calendar_today_rounded, size: 20, color: textColor.withValues(alpha: 0.6)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                      ),
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(26),
+                        onTap: isSaving
+                            ? null
+                            : () async {
+                                setSheetState(() => isSaving = true);
+                                final messenger = ScaffoldMessenger.of(context);
+                                final uid = _uid;
+                                final newPhoto = photoUrlCtrl.text.trim();
+                                try {
+                                  if (uid != null) {
+                                    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+                                      'name': nameCtrl.text.trim(),
+                                      'phone': phoneCtrl.text.trim(),
+                                      'dob': dobCtrl.text.trim(),
+                                      'dateOfBirth': dobCtrl.text.trim(),
+                                      'photoUrl': newPhoto,
+                                      'profilePhotoUrl': newPhoto,
+                                      'avatarGradientIndex': selectedGradientIdx,
+                                    }, SetOptions(merge: true));
+                                    try {
+                                      await FirebaseAuth.instance.currentUser?.updatePhotoURL(newPhoto);
+                                    } catch (_) {}
+                                  }
+                                  if (mounted) {
+                                    Navigator.pop(ctx);
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Profile updated successfully!'),
+                                        backgroundColor: Color(0xFF00A36C),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (ctx.mounted) {
+                                    setSheetState(() => isSaving = false);
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text('Failed to update profile: $e'),
+                                        backgroundColor: const Color(0xFFEF4444),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        child: Center(
+                          child: isSaving
+                              ? const SmartDoseLoading(size: 38, color: Colors.white)
+                              : const Text(
+                                  'Save Changes',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF00A36C)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                style: TextStyle(color: textColor),
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF00A36C)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-              const SizedBox(height: 14),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-              // Date of Birth Date Picker
-              InkWell(
-                onTap: () async {
-                  final now = DateTime.now();
-                  final picked = await showDatePicker(
-                    context: ctx,
-                    initialDate: initialDob ?? DateTime(now.year - 30),
-                    firstDate: DateTime(1920),
-                    lastDate: now,
-                    builder: (c, child) => Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: Theme.of(context).colorScheme.copyWith(
-                          primary: const Color(0xFF00A36C),
-                        ),
-                      ),
-                      child: child!,
-                    ),
-                  );
-                  if (picked != null) {
-                    final formatted = DateFormat('yyyy-MM-dd').format(picked);
-                    setSheetState(() {
-                      dobCtrl.text = formatted;
-                      initialDob = picked;
-                    });
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.cake_outlined, color: Color(0xFF00A36C)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Date of Birth',
-                              style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6)),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              dobCtrl.text.isEmpty ? 'Select Date of Birth' : dobCtrl.text,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: dobCtrl.text.isEmpty
-                                    ? textColor.withValues(alpha: 0.4)
-                                    : textColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.calendar_today_rounded, size: 20, color: textColor.withValues(alpha: 0.6)),
-                    ],
-                  ),
+  String _calculateAgeString(String rawDob) {
+    final trimmed = rawDob.trim();
+    if (trimmed.isEmpty) return 'Age: —';
+    try {
+      final parsed = DateTime.parse(trimmed);
+      final now = DateTime.now();
+      int age = now.year - parsed.year;
+      if (now.month < parsed.month || (now.month == parsed.month && now.day < parsed.day)) {
+        age--;
+      }
+      return age > 0 ? 'Age: $age' : 'Age: —';
+    } catch (_) {
+      try {
+        final match = RegExp(r'\b(19|20)\d{2}\b').firstMatch(trimmed);
+        if (match != null) {
+          final year = int.parse(match.group(0)!);
+          final age = DateTime.now().year - year;
+          return age > 0 ? 'Age: $age' : 'Age: —';
+        }
+      } catch (_) {}
+      return 'Age: —';
+    }
+  }
+
+  Widget _buildAvatarImage(String photoVal, String initials, double size) {
+    final trimmed = photoVal.trim();
+    if (trimmed.isEmpty) {
+      return Center(
+        child: Text(
+          initials,
+          style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900),
+        ),
+      );
+    }
+    if (trimmed.startsWith('data:image')) {
+      try {
+        final base64Str = trimmed.contains(',') ? trimmed.split(',').last : trimmed;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => Center(
+            child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+          ),
+        );
+      } catch (_) {}
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return Image.network(
+        trimmed,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+        ),
+      );
+    }
+    final file = File(trimmed);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+        ),
+      );
+    }
+    return Center(
+      child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+    );
+  }
+
+  void _showUploadImageDialog(
+    BuildContext parentCtx,
+    TextEditingController photoCtrl,
+    StateSetter parentSetState,
+  ) {
+    final cardColor = Theme.of(parentCtx).colorScheme.surface;
+    final textColor = Theme.of(parentCtx).colorScheme.onSurface;
+
+    showModalBottomSheet(
+      context: parentCtx,
+      backgroundColor: Colors.transparent,
+      builder: (dlgCtx) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Change Profile Picture',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
                 ),
+                IconButton(
+                  icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
+                  onPressed: () => Navigator.pop(dlgCtx),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Choose from Gallery Tile
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00A36C).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.photo_library_rounded, color: Color(0xFF00A36C)),
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00A36C),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-                    elevation: 0,
-                  ),
-                  onPressed: () async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final uid = _uid;
-                    if (uid != null) {
-                      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-                        'name': nameCtrl.text.trim(),
-                        'phone': phoneCtrl.text.trim(),
-                        'dob': dobCtrl.text.trim(),
-                        'dateOfBirth': dobCtrl.text.trim(),
-                      }, SetOptions(merge: true));
-                    }
-                    if (mounted) {
-                      Navigator.pop(ctx);
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Profile updated successfully!'),
-                          backgroundColor: Color(0xFF00A36C),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text(
-                    'Save Changes',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
+              title: Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+              subtitle: Text('Pick an image from your device photos', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              onTap: () async {
+                Navigator.pop(dlgCtx);
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery,
+                  maxWidth: 512,
+                  maxHeight: 512,
+                  imageQuality: 80,
+                );
+                if (picked != null) {
+                  final uid = FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
+                  try {
+                    final ref = FirebaseStorage.instance.ref().child('avatars/$uid.jpg');
+                    await ref.putFile(File(picked.path));
+                    final downloadUrl = await ref.getDownloadURL();
+                    final timestampedUrl = downloadUrl.contains('?')
+                        ? '$downloadUrl&t=${DateTime.now().millisecondsSinceEpoch}'
+                        : '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+                    parentSetState(() => photoCtrl.text = timestampedUrl);
+                  } catch (e) {
+                    debugPrint('Storage upload warning, fallback to Cloud Base64: $e');
+                    try {
+                      final bytes = await File(picked.path).readAsBytes();
+                      final base64Url = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                      parentSetState(() => photoCtrl.text = base64Url);
+                    } catch (_) {}
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+
+            // Take Photo Tile
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
                 ),
+                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF06B6D4)),
+              ),
+              title: Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+              subtitle: Text('Use camera to take a new picture', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              onTap: () async {
+                Navigator.pop(dlgCtx);
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(
+                  source: ImageSource.camera,
+                  maxWidth: 512,
+                  maxHeight: 512,
+                  imageQuality: 80,
+                );
+                if (picked != null) {
+                  final uid = FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
+                  try {
+                    final ref = FirebaseStorage.instance.ref().child('avatars/$uid.jpg');
+                    await ref.putFile(File(picked.path));
+                    final downloadUrl = await ref.getDownloadURL();
+                    final timestampedUrl = downloadUrl.contains('?')
+                        ? '$downloadUrl&t=${DateTime.now().millisecondsSinceEpoch}'
+                        : '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+                    parentSetState(() => photoCtrl.text = timestampedUrl);
+                  } catch (e) {
+                    debugPrint('Storage upload warning, fallback to Cloud Base64: $e');
+                    try {
+                      final bytes = await File(picked.path).readAsBytes();
+                      final base64Url = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                      parentSetState(() => photoCtrl.text = base64Url);
+                    } catch (_) {}
+                  }
+                }
+              },
+            ),
+
+            if (photoCtrl.text.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              // Remove Photo Tile
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+                ),
+                title: const Text('Remove Photo', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+                subtitle: Text('Use colorful initials avatar instead', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onTap: () {
+                  Navigator.pop(dlgCtx);
+                  parentSetState(() => photoCtrl.clear());
+                },
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -240,19 +660,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
         final name = userData?['name'] ?? widget.fallbackName;
         final phone = (userData?['phone'] as String? ?? '').isNotEmpty ? userData!['phone'] : 'No phone';
         final rawDob = (userData?['dob'] ?? userData?['dateOfBirth'] ?? '').toString().trim();
-        String dob = 'Not set';
-        if (rawDob.isNotEmpty) {
-          try {
-            final parsedDate = DateTime.parse(rawDob);
-            dob = DateFormat('MMM d, yyyy').format(parsedDate);
-          } catch (_) {
-            dob = rawDob;
-          }
-        }
 
-        final initials = name.trim().isNotEmpty
-            ? name.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
-            : 'MD';
+        final initials = _getInitials(name);
+        final avatarGradIdx = (userData?['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
+        final userAvatarGradient = _avatarGradients[avatarGradIdx];
 
         final prefs = userData?['preferences'] as Map<String, dynamic>?;
         if (prefs != null) {
@@ -342,22 +753,25 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                    GestureDetector(
+                      onTap: () => _showEditProfileSheet(userData),
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: userAvatarGradient,
+                          ),
+                          border: Border.all(color: userAvatarGradient.last, width: 2),
                         ),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 22,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(32),
+                          child: _buildAvatarImage(
+                            (userData?['photoUrl'] ?? userData?['profilePhotoUrl'] ?? FirebaseAuth.instance.currentUser?.photoURL ?? '').toString(),
+                            initials,
+                            64,
+                          ),
                         ),
                       ),
                     ),
@@ -376,7 +790,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'DOB: $dob · $phone',
+                            '${_calculateAgeString(rawDob)} · $phone',
                             style: TextStyle(
                               fontSize: 13,
                               color: secondaryTextColor,

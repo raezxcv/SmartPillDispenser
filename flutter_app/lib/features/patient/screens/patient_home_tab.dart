@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -40,11 +42,17 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
   Map<String, dynamic>? _deviceData;
   String? _deviceId;
 
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _schedulesStream;
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _todayLogsStream;
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _compartmentsStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userDocStream;
+
   String? get _uid => FirebaseAuth.instance.currentUser?.uid;
 
   @override
   void initState() {
     super.initState();
+    _initStreams();
     _startCountdown();
     _initDeviceStream();
   }
@@ -80,30 +88,24 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>>? get _schedulesStream {
+  void _initStreams() {
     final uid = _uid;
-    if (uid == null) return null;
-    return FirebaseFirestore.instance
+    if (uid == null) return;
+    _schedulesStream = FirebaseFirestore.instance
         .collection('schedules')
         .where('patientUid', isEqualTo: uid)
         .snapshots();
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>>? get _todayLogsStream {
-    final uid = _uid;
-    if (uid == null) return null;
-    return FirebaseFirestore.instance
+    _todayLogsStream = FirebaseFirestore.instance
         .collection('dispensingLogs')
         .where('patientUid', isEqualTo: uid)
         .snapshots();
-  }
-
-  Stream<QuerySnapshot<Map<String, dynamic>>>? get _compartmentsStream {
-    final uid = _uid;
-    if (uid == null) return null;
-    return FirebaseFirestore.instance
+    _compartmentsStream = FirebaseFirestore.instance
         .collection('compartments')
         .where('patientUid', isEqualTo: uid)
+        .snapshots();
+    _userDocStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
         .snapshots();
   }
 
@@ -358,6 +360,89 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     );
   }
 
+  static String _getInitials(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'SD';
+    final parts = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
+      return parts.first.length >= 2
+          ? parts.first.substring(0, 2).toUpperCase()
+          : parts.first[0].toUpperCase();
+    }
+    return 'SD';
+  }
+
+  static const List<List<Color>> _avatarGradients = [
+    [Color(0xFF00C882), Color(0xFF00A36C)], // Emerald Mint
+    [Color(0xFF06B6D4), Color(0xFF0891B2)], // Ocean Cyan
+    [Color(0xFF8B5CF6), Color(0xFF6D28D9)], // Royal Purple
+    [Color(0xFFEC4899), Color(0xFFDB2777)], // Vibrant Pink
+    [Color(0xFFF43F5E), Color(0xFFE11D48)], // Coral Rose
+    [Color(0xFF475569), Color(0xFF1E293B)], // Midnight Slate
+  ];
+
+  Widget _buildAvatarImage(String photoVal, String initials, double size) {
+    final trimmed = photoVal.trim();
+    if (trimmed.isEmpty) {
+      return Center(
+        child: Text(
+          initials,
+          style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.w900),
+        ),
+      );
+    }
+    if (trimmed.startsWith('data:image')) {
+      try {
+        final base64Str = trimmed.contains(',') ? trimmed.split(',').last : trimmed;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) => Center(
+            child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.w900)),
+          ),
+        );
+      } catch (_) {}
+    }
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return Image.network(
+        trimmed,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.w900)),
+        ),
+      );
+    }
+    final file = File(trimmed);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.w900)),
+        ),
+      );
+    }
+    return Center(
+      child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.38, fontWeight: FontWeight.w900)),
+    );
+  }
+
+  String _cachedHeaderPhotoUrl = '';
+  String _cachedHeaderName = '';
+  int _cachedAvatarGradIdx = 0;
+
   Widget _buildHeader() {
     final theme = Theme.of(context);
     final primaryTextColor = theme.colorScheme.onSurface;
@@ -365,76 +450,100 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
     final cardBgColor = theme.cardTheme.color ?? theme.colorScheme.surface;
     final isDark = theme.brightness == Brightness.dark;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _userDocStream,
+      builder: (context, userSnap) {
+        if (userSnap.hasData && userSnap.data?.data() != null) {
+          final userData = userSnap.data!.data()!;
+          _cachedHeaderName = userData['name'] ?? widget.displayName;
+          _cachedHeaderPhotoUrl = (userData['photoUrl'] ?? userData['profilePhotoUrl'] ?? FirebaseAuth.instance.currentUser?.photoURL ?? '').toString();
+          _cachedAvatarGradIdx = (userData['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
+        }
+
+        final name = _cachedHeaderName.isNotEmpty ? _cachedHeaderName : widget.displayName;
+        final photoUrl = _cachedHeaderPhotoUrl.isNotEmpty ? _cachedHeaderPhotoUrl : (FirebaseAuth.instance.currentUser?.photoURL ?? '');
+        final initials = _getInitials(name);
+        final activeGradient = _avatarGradients[_cachedAvatarGradIdx];
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              _greeting,
-              style: TextStyle(fontSize: 15, color: secondaryTextColor, fontWeight: FontWeight.w500),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greeting,
+                  style: TextStyle(fontSize: 15, color: secondaryTextColor, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: TextStyle(fontSize: 24, color: primaryTextColor, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-            const SizedBox(height: 2),
-            Text(
-              widget.displayName,
-              style: TextStyle(fontSize: 24, color: primaryTextColor, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            GestureDetector(
-              onTap: widget.onGoToAlerts,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                    color: cardBgColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 10)]),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(LucideIcons.bell, color: primaryTextColor, size: 22),
-                    if (widget.unreadCount > 0)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEF4444),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: cardBgColor, width: 1.5),
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onGoToAlerts,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                        color: cardBgColor,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04), blurRadius: 10)]),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(LucideIcons.bell, color: primaryTextColor, size: 22),
+                        if (widget.unreadCount > 0)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: cardBgColor, width: 1.5),
+                              ),
+                            ),
                           ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: widget.onGoToProfile,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: activeGradient),
+                      border: Border.all(color: activeGradient.last, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeGradient.last.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                  ],
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(22),
+                      child: _buildAvatarImage(photoUrl, initials, 44),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: widget.onGoToProfile,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFD1FAE5),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  widget.userInitials,
-                  style: const TextStyle(color: Color(0xFF00A36C), fontWeight: FontWeight.bold, fontSize: 15),
-                ),
-              ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -852,12 +961,12 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
           crossAxisCount: 2,
           crossAxisSpacing: 14,
           mainAxisSpacing: 14,
-          childAspectRatio: 1.35,
+          childAspectRatio: 1.18,
           children: actions.map((a) {
             return GestureDetector(
               onTap: a['cb'] as VoidCallback,
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
                 decoration: BoxDecoration(
                     color: cardBgColor,
                     borderRadius: BorderRadius.circular(24),
@@ -880,7 +989,7 @@ class _PatientHomeTabState extends State<PatientHomeTab> {
                     const SizedBox(height: 12),
                     Text(a['title'] as String,
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryTextColor)),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(a['subtitle'] as String,
                         style: TextStyle(fontSize: 13, color: secondaryTextColor)),
                   ],

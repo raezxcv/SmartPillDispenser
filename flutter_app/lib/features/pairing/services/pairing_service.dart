@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -169,7 +169,7 @@ class PairingService {
       final pData = patientDoc.data()!;
       patientProfile['name'] = pData['name'] ?? patientProfile['name'];
       patientProfile['email'] = pData['email'] ?? patientProfile['email'];
-      patientProfile['photoUrl'] = pData['profilePhotoUrl'];
+      patientProfile['photoUrl'] = pData['photoUrl'] ?? pData['profilePhotoUrl'];
       
       if (pData['dateOfBirth'] != null) {
         try {

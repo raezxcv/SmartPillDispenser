@@ -129,7 +129,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                 const Icon(LucideIcons.camera, color: Colors.white, size: 18),
                 const SizedBox(width: 10),
                 Text('Capture request sent to Raspberry Pi Camera!',
-                    style: GoogleFonts.manrope(fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
               ],
             ),
             backgroundColor: const Color(0xFF00A36C),
@@ -193,7 +193,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
         ),
         title: Text(
           'Live Camera Feed',
-          style: GoogleFonts.manrope(
+          style: GoogleFonts.plusJakartaSans(
             color: primaryTextColor,
             fontWeight: FontWeight.w800,
             fontSize: 20,
@@ -285,7 +285,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                   const SizedBox(width: 6),
                                   Text(
                                     'LIVE',
-                                    style: GoogleFonts.manrope(
+                                    style: GoogleFonts.plusJakartaSans(
                                       color: Colors.white, fontSize: 11,
                                       fontWeight: FontWeight.w900, letterSpacing: 1.0,
                                     ),
@@ -326,7 +326,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                   const SizedBox(width: 5),
                                   Text(
                                     isOnline ? 'Raspberry Pi · Online' : 'Standby',
-                                    style: GoogleFonts.manrope(
+                                    style: GoogleFonts.plusJakartaSans(
                                       color: isDark ? Colors.white : const Color(0xFF0F172A),
                                       fontSize: 11, fontWeight: FontWeight.w700,
                                     ),
@@ -369,7 +369,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                     const SizedBox(width: 7),
                                     Text(
                                       _isCapturing ? 'Capturing…' : 'Take Photo',
-                                      style: GoogleFonts.manrope(
+                                      style: GoogleFonts.plusJakartaSans(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
                                         color: Colors.white,
@@ -429,14 +429,14 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     children: [
                       Text(
                         'Live Detection & Activity Logs',
-                        style: GoogleFonts.manrope(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 18, fontWeight: FontWeight.w800, color: primaryTextColor,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Patient detection, medicine intake & captures',
-                        style: GoogleFonts.manrope(fontSize: 13, color: secondaryTextColor),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 13, color: secondaryTextColor),
                       ),
                     ],
                   ),
@@ -477,7 +477,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           const SizedBox(height: 18),
                           Text(
                             'No activity yet',
-                            style: GoogleFonts.manrope(
+                            style: GoogleFonts.plusJakartaSans(
                               fontSize: 18, fontWeight: FontWeight.w800, color: primaryTextColor,
                             ),
                           ),
@@ -485,7 +485,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                           Text(
                             'Patient detections, medicine intake events, and camera captures will appear here in real-time.',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.manrope(fontSize: 14, color: secondaryTextColor, height: 1.4),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: secondaryTextColor, height: 1.4),
                           ),
                         ],
                       ),
@@ -570,7 +570,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   'LIVE',
-                                  style: GoogleFonts.manrope(
+                                  style: GoogleFonts.plusJakartaSans(
                                     color: Colors.white, fontSize: 11,
                                     fontWeight: FontWeight.w900, letterSpacing: 1.0,
                                   ),
@@ -605,7 +605,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   isOnline ? 'Raspberry Pi · Online' : 'Standby',
-                                  style: GoogleFonts.manrope(
+                                  style: GoogleFonts.plusJakartaSans(
                                     color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -647,7 +647,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     _isCapturing ? 'Capturing…' : 'Take Photo',
-                                    style: GoogleFonts.manrope(
+                                    style: GoogleFonts.plusJakartaSans(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13,
                                       color: Colors.white,
@@ -777,12 +777,12 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     Expanded(
                       child: Text(
                         name,
-                        style: GoogleFonts.manrope(fontSize: 15, fontWeight: FontWeight.w700, color: primaryTextColor),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: primaryTextColor),
                       ),
                     ),
                     Text(
                       timeStr,
-                      style: GoogleFonts.manrope(fontSize: 12, color: secondaryTextColor, fontWeight: FontWeight.w500),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: secondaryTextColor, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -790,7 +790,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                   const SizedBox(height: 4),
                   Text(
                     desc,
-                    style: GoogleFonts.manrope(fontSize: 13, color: secondaryTextColor, height: 1.3),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, color: secondaryTextColor, height: 1.3),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -802,7 +802,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                       decoration: BoxDecoration(color: badgeBg, borderRadius: BorderRadius.circular(12)),
                       child: Text(
                         badgeLabel,
-                        style: GoogleFonts.manrope(fontSize: 11, fontWeight: FontWeight.w700, color: badgeText),
+                        style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: badgeText),
                       ),
                     ),
                     if (photoUrl != null && photoUrl.isNotEmpty)
@@ -816,7 +816,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                             const SizedBox(width: 4),
                             Text(
                               'Photo Attached',
-                              style: GoogleFonts.manrope(fontSize: 11, color: const Color(0xFF4338CA), fontWeight: FontWeight.w700),
+                              style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF4338CA), fontWeight: FontWeight.w700),
                             ),
                           ],
                         ),
@@ -901,7 +901,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             const SizedBox(height: 16),
             Text(
               isOnline ? 'Raspberry Pi Camera Connected' : 'Camera Standby',
-              style: GoogleFonts.manrope(
+              style: GoogleFonts.plusJakartaSans(
                 color: titleColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
@@ -916,7 +916,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     ? 'Streaming live patient monitoring feed from Raspberry Pi.'
                     : 'Waiting for camera connection or dispensing event trigger…',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.manrope(
+                style: GoogleFonts.plusJakartaSans(
                   color: subtitleColor,
                   fontSize: 12.5,
                   height: 1.35,

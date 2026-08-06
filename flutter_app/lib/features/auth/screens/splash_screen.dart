@@ -89,17 +89,17 @@ class _SplashScreenState extends State<SplashScreen>
                   // App Logo (transparent background)
                   Image.asset(
                     'assets/Smart Dose Logo No Bg.png',
-                    width: 130,
-                    height: 130,
+                    width: 110,
+                    height: 110,
                     fit: BoxFit.contain,
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 6),
 
                   // App Title
                   Text(
                     'SmartDose',
-                    style: GoogleFonts.manrope(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
                       color: Colors.white,
@@ -107,23 +107,23 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 2),
 
                   // Tagline / Subtitle
                   Text(
                     'Your Smart Medication Companion',
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
                       color: Colors.white.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
+                      letterSpacing: 0.2,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
 
                   // SmartDose Lottie Loader (white animation)
-                  const SmartDoseLoading(size: 150, color: Colors.white),
+                  const SmartDoseLoading(size: 110, color: Colors.white),
 
                   const Spacer(),
                   const SizedBox(height: 24),

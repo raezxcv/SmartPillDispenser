@@ -13,7 +13,7 @@ import 'features/auth/screens/signup_step3_screen.dart';
 import 'features/auth/providers/auth_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'features/patient/screens/patient_home_screen.dart';
-import 'features/caregiver/screens/caregiver_dashboard_screen.dart';
+import 'features/caregiver/screens/caregiver_home_screen.dart';
 import 'shared/widgets/smartdose_loading.dart';
 
 void main() async {
@@ -54,6 +54,15 @@ class SmartDoseApp extends ConsumerWidget {
       themeMode: themeMode,
       themeAnimationDuration: const Duration(milliseconds: 400),
       themeAnimationCurve: Curves.easeInOut,
+      builder: (context, child) {
+        return DefaultTextStyle(
+          style: TextStyle(
+            fontFamily: AppTheme.fontFamilyName,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          child: child!,
+        );
+      },
       home: const _RootNavigator(),
     );
   }
@@ -77,7 +86,7 @@ class _RootNavigatorState extends State<_RootNavigator> {
 
   void _pushDashboard(String role, String name) {
     final Widget dashboard = role == 'caregiver'
-        ? CaregiverDashboardScreen(onSwitchRole: _signOut)
+        ? CaregiverHomeScreen(onSignOut: _signOut)
         : PatientHomeScreen(userName: name, onSignOut: _signOut);
     _nav.pushAndRemoveUntil(_fadeRoute(dashboard), (_) => false);
   }

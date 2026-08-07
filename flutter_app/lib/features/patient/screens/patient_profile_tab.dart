@@ -11,6 +11,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../pairing/screens/pair_caregiver_screen.dart';
 import '../../pairing/screens/connected_caregivers_screen.dart';
+import '../../caregiver/screens/caregiver_connect_patient_screen.dart';
+import '../../caregiver/screens/caregiver_patients_tab.dart';
 import 'compartment_inventory_screen.dart';
 import 'camera_feed_screen.dart';
 import 'patient_alerts_tab.dart';
@@ -660,6 +662,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
         final name = userData?['name'] ?? widget.fallbackName;
         final phone = (userData?['phone'] as String? ?? '').isNotEmpty ? userData!['phone'] : 'No phone';
         final rawDob = (userData?['dob'] ?? userData?['dateOfBirth'] ?? '').toString().trim();
+        final isCaregiver = (userData?['role'] as String? ?? '').toLowerCase() == 'caregiver';
 
         final initials = _getInitials(name);
         final avatarGradIdx = (userData?['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
@@ -800,7 +803,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, color: Color(0xFF00A36C)),
+                      icon: const Icon(LucideIcons.edit, color: Color(0xFF00A36C)),
                       onPressed: () => _showEditProfileSheet(userData),
                     ),
                   ],
@@ -835,7 +838,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 child: Column(
                   children: [
                     _buildProfileListTile(
-                      icon: Icons.videocam_outlined,
+                      icon: LucideIcons.camera,
                       title: 'Live Camera Feed',
                       subtitle: 'Visual check of pill tray',
                       showDivider: true,
@@ -847,7 +850,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       },
                     ),
                     _buildProfileListTile(
-                      icon: Icons.inventory_2_outlined,
+                      icon: LucideIcons.package,
                       title: 'Medicine Inventory',
                       subtitle: '10 compartments stock status',
                       showDivider: true,
@@ -859,7 +862,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       },
                     ),
                     _buildProfileListTile(
-                      icon: Icons.developer_board_rounded,
+                      icon: LucideIcons.cpu,
                       title: 'About Device',
                       subtitle: 'SmartDose ESP32 · Firmware v2.4.1',
                       showDivider: false,
@@ -896,26 +899,30 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 child: Column(
                   children: [
                     _buildProfileListTile(
-                      icon: Icons.qr_code_scanner_rounded,
-                      title: 'Pair Caregiver via QR',
-                      subtitle: 'Generate secure QR code for caregivers',
+                      icon: LucideIcons.qrCode,
+                      title: isCaregiver ? 'Pair Patient via QR' : 'Pair Caregiver via QR',
+                      subtitle: isCaregiver ? 'Scan or enter patient pairing code' : 'Generate secure QR code for caregivers',
                       showDivider: true,
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const PairCaregiverScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => isCaregiver ? const CaregiverConnectPatientScreen() : const PairCaregiverScreen(),
+                          ),
                         );
                       },
                     ),
                     _buildProfileListTile(
-                      icon: Icons.people_outline_rounded,
-                      title: 'Connected Caregivers',
-                      subtitle: 'Manage active caregiver access',
+                      icon: LucideIcons.users,
+                      title: isCaregiver ? 'Connected Patients' : 'Connected Caregivers',
+                      subtitle: isCaregiver ? 'Manage active patient connections' : 'Manage active caregiver access',
                       showDivider: false,
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ConnectedCaregiversScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => isCaregiver ? const CaregiverPatientsTab() : const ConnectedCaregiversScreen(),
+                          ),
                         );
                       },
                     ),
@@ -951,7 +958,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 child: Column(
                   children: [
                     _buildProfileSwitchTile(
-                      icon: Icons.notifications_none_rounded,
+                      icon: LucideIcons.bell,
                       title: 'Push Notifications',
                       subtitle: 'Dose reminders & alerts',
                       value: _pushNotificationsEnabled,
@@ -962,8 +969,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       showDivider: true,
                     ),
                     _buildProfileSwitchTile(
-                      icon: Icons.chat_bubble_outline_rounded,
-                      title: 'SMS to Caregiver',
+                      icon: LucideIcons.messageSquare,
+                      title: isCaregiver ? 'SMS Alerts to Patient' : 'SMS to Caregiver',
                       subtitle: phone,
                       value: _smsToCaregiverEnabled,
                       onChanged: (val) {
@@ -973,7 +980,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       showDivider: true,
                     ),
                     _buildProfileSwitchTile(
-                      icon: Icons.dark_mode_outlined,
+                      icon: LucideIcons.moon,
                       title: 'Dark Mode',
                       subtitle: 'Easier on the eyes at night',
                       value: isDarkMode,
@@ -1000,7 +1007,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
                   ),
                   onPressed: () => _confirmSignOut(context),
-                  icon: const Icon(Icons.logout_rounded, size: 20),
+                  icon: const Icon(LucideIcons.logOut, size: 20),
                   label: const Text(
                     'Log Out',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

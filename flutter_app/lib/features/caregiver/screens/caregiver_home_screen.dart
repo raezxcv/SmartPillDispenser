@@ -7,6 +7,7 @@ import 'caregiver_dashboard_tab.dart';
 import 'caregiver_patients_tab.dart';
 import 'caregiver_reports_tab.dart';
 import '../../patient/screens/patient_profile_tab.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CaregiverHomeScreen extends StatefulWidget {
   final VoidCallback onSignOut;
@@ -72,6 +73,10 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          return;
+        }
         if (_currentIndex != 0) {
           setState(() => _currentIndex = 0);
         } else {
@@ -135,10 +140,10 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.people_alt_rounded, Icons.people_alt_outlined, 'Patients'),
-              _buildNavItem(2, Icons.bar_chart_rounded, Icons.bar_chart_outlined, 'Reports'),
-              _buildNavItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
+              _buildNavItem(0, LucideIcons.home, 'Home'),
+              _buildNavItem(1, LucideIcons.users, 'Patients'),
+              _buildNavItem(2, LucideIcons.trendingUp, 'Reports'),
+              _buildNavItem(3, LucideIcons.user, 'Profile', badgeCount: _unreadAlertsCount),
             ],
           ),
         ),
@@ -146,7 +151,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label, {int badgeCount = 0}) {
+  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
     const primaryColor = Color(0xFF00A36C);
@@ -167,7 +172,7 @@ class _CaregiverHomeScreenState extends State<CaregiverHomeScreen> {
                   scale: isSelected ? 1.15 : 1.0,
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
-                    isSelected ? activeIcon : inactiveIcon,
+                    icon,
                     color: isSelected ? primaryColor : unselectedColor,
                     size: 24,
                   ),

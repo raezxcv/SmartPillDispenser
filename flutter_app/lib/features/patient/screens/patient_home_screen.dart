@@ -8,6 +8,7 @@ import 'patient_meds_tab.dart';
 import 'patient_history_tab.dart';
 import 'patient_alerts_tab.dart';
 import 'patient_profile_tab.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class PatientHomeScreen extends StatefulWidget {
   final String userName;
@@ -153,6 +154,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+          return;
+        }
         if (_currentIndex != 0) {
           setState(() {
             _currentIndex = 0;
@@ -229,10 +234,10 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.calendar_month_rounded, Icons.calendar_today_outlined, 'Meds'),
-              _buildNavItem(2, Icons.history_rounded, Icons.history_toggle_off_rounded, 'History'),
-              _buildNavItem(3, Icons.person_rounded, Icons.person_outline_rounded, 'Profile'),
+              _buildNavItem(0, LucideIcons.home, 'Home'),
+              _buildNavItem(1, LucideIcons.pill, 'Meds'),
+              _buildNavItem(2, LucideIcons.history, 'History'),
+              _buildNavItem(3, LucideIcons.user, 'Profile'),
             ],
           ),
         ),
@@ -240,7 +245,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label, {int badgeCount = 0}) {
+  Widget _buildNavItem(int index, IconData icon, String label, {int badgeCount = 0}) {
     final isSelected = _currentIndex == index;
     final theme = Theme.of(context);
     const primaryColor = Color(0xFF00A36C);
@@ -261,7 +266,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   scale: isSelected ? 1.15 : 1.0,
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
-                    isSelected ? activeIcon : inactiveIcon,
+                    icon,
                     color: isSelected ? primaryColor : unselectedColor,
                     size: 24,
                   ),

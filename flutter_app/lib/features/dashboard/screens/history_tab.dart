@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'patient_alerts_tab.dart';
+import 'alerts_tab.dart';
 import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class PatientHistoryTab extends StatefulWidget {

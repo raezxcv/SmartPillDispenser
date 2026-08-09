@@ -6,8 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'patient_alerts_tab.dart';
+import 'alerts_tab.dart';
 import 'package:smartdose/shared/widgets/smartdose_loading.dart';
+import 'package:smartdose/shared/widgets/mjpeg_stream_view.dart';
 
 class CameraFeedScreen extends StatefulWidget {
   const CameraFeedScreen({super.key});
@@ -17,9 +18,9 @@ class CameraFeedScreen extends StatefulWidget {
 }
 
 class _CameraFeedScreenState extends State<CameraFeedScreen> {
-  Timer? _refreshTimer;
+  // _streamKey is bumped by the reconnect button to force MjpegStreamView rebuild
+  int _streamKey = 0;
   Timer? _controlsTimer;
-  DateTime _lastRefreshed = DateTime.now();
   bool _isCapturing = false;
   bool _isFullscreen = false;
   bool _showControls = true;
@@ -34,15 +35,11 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     super.initState();
     _initDeviceStream();
     _resetControlsTimer();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (mounted) setState(() => _lastRefreshed = DateTime.now());
-    });
   }
 
   @override
   void dispose() {
     _exitFullscreen();
-    _refreshTimer?.cancel();
     _controlsTimer?.cancel();
     _deviceSub?.cancel();
     super.dispose();
@@ -97,8 +94,11 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     if (uid == null) return;
     try {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      final deviceId = userDoc.data()?['deviceId'] as String?;
-      if (deviceId == null || !mounted) return;
+      final rawId = userDoc.data()?['deviceId'] as String?;
+      final deviceId = (rawId != null && rawId.trim().isNotEmpty)
+          ? rawId.trim()
+          : 'SMARTDOSE_DEV_001';
+      if (!mounted) return;
       setState(() => _deviceId = deviceId);
       _deviceSub = FirebaseFirestore.instance
           .collection('devices')
@@ -150,7 +150,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
       if (mounted) {
         setState(() {
           _isCapturing = false;
-          _lastRefreshed = DateTime.now();
+          _streamKey++;
         });
       }
     }
@@ -172,7 +172,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
   Widget build(BuildContext context) {
     if (_isFullscreen) return _buildFullscreenView();
 
-    final cameraUrl = _deviceData?['latestSnapshotUrl'] as String?;
+    final streamUrl = _deviceData?['streamUrl'] as String?;
     final isOnline = _deviceData?['isOnline'] as bool? ?? false;
 
     final theme = Theme.of(context);
@@ -212,7 +212,8 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
           ),
           IconButton(
             icon: const Icon(LucideIcons.refreshCw, color: Color(0xFF00A36C), size: 20),
-            onPressed: () => setState(() => _lastRefreshed = DateTime.now()),
+            onPressed: () => setState(() => _streamKey++),
+            tooltip: 'Reconnect stream',
           ),
         ],
       ),
@@ -243,21 +244,19 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
               ),
               child: Stack(
                 children: [
-                  // Stream image (fills box) / Adaptive placeholder
+                  // Live MJPEG stream — auto-connects, auto-retries, shows LIVE badge
                   Positioned.fill(
-                    child: cameraUrl != null && cameraUrl.isNotEmpty
-                        ? Image.network(
-                            '$cameraUrl?t=${_lastRefreshed.millisecondsSinceEpoch}',
-                            fit: BoxFit.cover,
-                            loadingBuilder: (_, child, progress) => progress == null
-                                ? child
-                                : const Center(child: SmartDoseLoading(size: 60)),
-                            errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
-                          )
-                        : _buildStreamPlaceholder(isOnline, context),
+                    child: MjpegStreamView(
+                      key: ValueKey(_streamKey),
+                      streamUrl: streamUrl,
+                      isOnline: isOnline,
+                      fit: BoxFit.cover,
+                    ),
                   ),
 
                   // Animated Overlay Controls (Fades in/out on tap & auto-hide)
+                  // Note: the pulsing LIVE badge is rendered by MjpegStreamView above,
+                  // so it stays visible even when controls are hidden.
                   AnimatedOpacity(
                     opacity: _showControls ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 250),
@@ -265,35 +264,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                       ignoring: !_showControls,
                       child: Stack(
                         children: [
-                          // Top-left: LIVE badge
-                          Positioned(
-                            top: 14,
-                            left: 14,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE41E3F),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 7, height: 7,
-                                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'LIVE',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      color: Colors.white, fontSize: 11,
-                                      fontWeight: FontWeight.w900, letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
 
                           // Top-right: Device status badge (Adaptive light/dark mode)
                           Positioned(
@@ -509,7 +479,7 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
 
   // ─── FULLSCREEN VIEW (Landscape) ───────────────────────────────────────────
   Widget _buildFullscreenView() {
-    final cameraUrl = _deviceData?['latestSnapshotUrl'] as String?;
+    final streamUrl = _deviceData?['streamUrl'] as String?;
     final isOnline = _deviceData?['isOnline'] as bool? ?? false;
 
     return PopScope(
@@ -526,18 +496,13 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Full frame image / adaptive placeholder
-                if (cameraUrl != null && cameraUrl.isNotEmpty)
-                  Image.network(
-                    '$cameraUrl?t=${_lastRefreshed.millisecondsSinceEpoch}',
-                    fit: BoxFit.contain,
-                    loadingBuilder: (_, child, progress) => progress == null
-                        ? child
-                        : const Center(child: SmartDoseLoading(size: 60)),
-                    errorBuilder: (_, __, ___) => _buildStreamPlaceholder(isOnline, context),
-                  )
-                else
-                  _buildStreamPlaceholder(isOnline, context),
+                // Live MJPEG stream — fills screen in landscape fullscreen
+                MjpegStreamView(
+                  key: ValueKey(_streamKey),
+                  streamUrl: streamUrl,
+                  isOnline: isOnline,
+                  fit: BoxFit.contain,
+                ),
 
                 // Animated Overlay Controls in Landscape
                 AnimatedOpacity(
@@ -547,38 +512,6 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
                     ignoring: !_showControls,
                     child: Stack(
                       children: [
-                        // Top-left: LIVE badge
-                        Positioned(
-                          top: 24,
-                          left: 20,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE41E3F),
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 8, height: 8,
-                                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'LIVE',
-                                  style: GoogleFonts.plusJakartaSans(
-                                    color: Colors.white, fontSize: 11,
-                                    fontWeight: FontWeight.w900, letterSpacing: 1.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
 
                         // Top-right: Standby / Status badge overlay on Landscape
                         Positioned(
@@ -831,8 +764,9 @@ class _CameraFeedScreenState extends State<CameraFeedScreen> {
     );
   }
 
-  // ─── ADAPTIVE STREAM PLACEHOLDER ───────────────────────────────────────────
-  Widget _buildStreamPlaceholder(bool isOnline, BuildContext context) {
+  // _buildStreamPlaceholder removed — placeholder logic now lives inside MjpegStreamView.
+  // ignore: unused_element
+  Widget _unusedPlaceholder(bool isOnline, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final List<Color> bgColors = isOnline

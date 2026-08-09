@@ -38,7 +38,7 @@ extension _PwStrengthX on _PwStrength {
   }
 }
 
-/// Signup Step 3 of 3 — "Account Credentials"
+/// Signup Step 2 of 3 — "Account Credentials"
 /// Stepper is rendered by the parent fixed header in main.dart.
 class SignupStep3Screen extends StatefulWidget {
   final String role;
@@ -48,6 +48,9 @@ class SignupStep3Screen extends StatefulWidget {
   final String? gender;
   final String? address;
   final String initialEmail;
+  final String initialPassword;
+  final String initialConfirmPassword;
+  final Function(String email, String password, String confirmPassword)? onDraftChanged;
   final String? googleUid;
   final String? profilePhotoUrl;
   final VoidCallback onBack;
@@ -57,13 +60,16 @@ class SignupStep3Screen extends StatefulWidget {
 
   const SignupStep3Screen({
     super.key,
-    required this.role,
+    this.role = 'user',
     required this.name,
     required this.phone,
     required this.dob,
     required this.gender,
     required this.address,
     required this.initialEmail,
+    this.initialPassword = '',
+    this.initialConfirmPassword = '',
+    this.onDraftChanged,
     this.googleUid,
     this.profilePhotoUrl,
     required this.onBack,
@@ -79,8 +85,8 @@ class SignupStep3Screen extends StatefulWidget {
 class _SignupStep3ScreenState extends State<SignupStep3Screen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _emailController;
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -94,12 +100,32 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
   void initState() {
     super.initState();
     _emailController = TextEditingController(text: widget.initialEmail);
+    _passwordController = TextEditingController(text: widget.initialPassword);
+    _confirmPasswordController = TextEditingController(text: widget.initialConfirmPassword);
+    if (widget.initialPassword.isNotEmpty) {
+      _pwStrength = _calcStrength(widget.initialPassword);
+    }
+    _emailController.addListener(_notifyDraft);
+    _passwordController.addListener(_notifyDraft);
+    _confirmPasswordController.addListener(_notifyDraft);
+
     // Register submit handler with the parent's fixed bottom bar
     widget.onRegisterSubmit(_submitRegistration);
   }
 
+  void _notifyDraft() {
+    widget.onDraftChanged?.call(
+      _emailController.text,
+      _passwordController.text,
+      _confirmPasswordController.text,
+    );
+  }
+
   @override
   void dispose() {
+    _emailController.removeListener(_notifyDraft);
+    _passwordController.removeListener(_notifyDraft);
+    _confirmPasswordController.removeListener(_notifyDraft);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -198,7 +224,7 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : const Color(0xFF1F2937),
                               letterSpacing: -0.5,
                             ),
@@ -211,7 +237,7 @@ class _SignupStep3ScreenState extends State<SignupStep3Screen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                             ),
                           ),
@@ -474,7 +500,7 @@ class _FieldLabel extends StatelessWidget {
         Text(label,
             style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                 letterSpacing: 0.8)),
         if (required) ...[

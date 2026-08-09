@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-/// Signup Step 2 of 3 — "Personal Information"
+/// Signup Step 1 of 3 — "Personal Information"
 /// Stepper is rendered by the parent fixed header in main.dart.
 class SignupStep2Screen extends StatefulWidget {
   final String initialName;
+  final String initialPhone;
+  final String? initialDob;
+  final String? initialGender;
+  final String? initialAddress;
   final VoidCallback onBack;
   final Function(
     String name,
@@ -19,6 +23,10 @@ class SignupStep2Screen extends StatefulWidget {
   const SignupStep2Screen({
     super.key,
     required this.initialName,
+    this.initialPhone = '',
+    this.initialDob,
+    this.initialGender,
+    this.initialAddress,
     required this.onBack,
     required this.onNext,
     required this.onRegisterSubmit,
@@ -31,8 +39,8 @@ class SignupStep2Screen extends StatefulWidget {
 class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
 
   DateTime? _selectedDob;
   String? _selectedGender;
@@ -49,6 +57,14 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
+    _phoneController = TextEditingController(text: widget.initialPhone);
+    _addressController = TextEditingController(text: widget.initialAddress ?? '');
+    _selectedGender = widget.initialGender;
+    if (widget.initialDob != null && widget.initialDob!.isNotEmpty) {
+      try {
+        _selectedDob = DateFormat('yyyy-MM-dd').parse(widget.initialDob!);
+      } catch (_) {}
+    }
     // Register submit handler with the parent's fixed bottom bar
     widget.onRegisterSubmit(_submitStep2);
   }
@@ -139,7 +155,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 28,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : const Color(0xFF1F2937),
                               letterSpacing: -0.5,
                             ),
@@ -150,7 +166,7 @@ class _SignupStep2ScreenState extends State<SignupStep2Screen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                             ),
                           ),
@@ -342,7 +358,7 @@ class _FieldLabel extends StatelessWidget {
         Text(label,
             style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w700,
                 color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                 letterSpacing: 0.8)),
         if (required) ...[

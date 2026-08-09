@@ -71,7 +71,7 @@ class AuthService {
     required String email,
     required String password,
     required String name,
-    required String role, // 'patient' | 'caregiver'
+    String role = 'user',
     String? phone,
     String? dateOfBirth,
     String? gender,
@@ -104,24 +104,16 @@ class AuthService {
         'updatedAt': nowIso,
       }, SetOptions(merge: true));
 
-      if (role == 'patient') {
-        await _firestore.collection('patients').doc(uid).set({
-          'patientId': uid,
-          'name': name,
-          'deviceId': '',
-          'faceEnrollmentStatus': 'pending',
-          'adherencePercent': 0,
-          'caregiverIds': [],
-          'createdAt': nowIso,
-        }, SetOptions(merge: true));
-      } else if (role == 'caregiver') {
-        await _firestore.collection('caregivers').doc(uid).set({
-          'caregiverId': uid,
-          'name': name,
-          'patientIds': [],
-          'createdAt': nowIso,
-        }, SetOptions(merge: true));
-      }
+      // Every user has a patient record for self-medication/dispenser management
+      await _firestore.collection('patients').doc(uid).set({
+        'patientId': uid,
+        'name': name,
+        'deviceId': '',
+        'faceEnrollmentStatus': 'pending',
+        'adherencePercent': 0,
+        'caregiverIds': [],
+        'createdAt': nowIso,
+      }, SetOptions(merge: true));
 
       return null;
     } on FirebaseAuthException catch (e) {
@@ -273,7 +265,7 @@ class AuthService {
     required String uid,
     required String name,
     required String email,
-    required String role,
+    String role = 'user',
     String? phone,
     String? dateOfBirth,
     String? gender,
@@ -301,24 +293,16 @@ class AuthService {
         'updatedAt': nowIso,
       }, SetOptions(merge: true));
 
-      if (role == 'patient') {
-        await _firestore.collection('patients').doc(uid).set({
-          'patientId': uid,
-          'name': name,
-          'deviceId': '',
-          'faceEnrollmentStatus': 'pending',
-          'adherencePercent': 0,
-          'caregiverIds': [],
-          'createdAt': nowIso,
-        }, SetOptions(merge: true));
-      } else if (role == 'caregiver') {
-        await _firestore.collection('caregivers').doc(uid).set({
-          'caregiverId': uid,
-          'name': name,
-          'patientIds': [],
-          'createdAt': nowIso,
-        }, SetOptions(merge: true));
-      }
+      // Every user has a patient record for self-medication/dispenser management
+      await _firestore.collection('patients').doc(uid).set({
+        'patientId': uid,
+        'name': name,
+        'deviceId': '',
+        'faceEnrollmentStatus': 'pending',
+        'adherencePercent': 0,
+        'caregiverIds': [],
+        'createdAt': nowIso,
+      }, SetOptions(merge: true));
 
       return null;
     } on FirebaseAuthException catch (e) {
@@ -342,10 +326,10 @@ class AuthService {
           await _firestore.collection('users').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data() as Map<String, dynamic>;
-        return data['role'] ?? 'patient';
+        return data['role'] ?? 'user';
       }
     } catch (_) {}
-    return 'patient';
+    return 'user';
   }
 
   /// Fetch user profile data from Firestore.

@@ -61,6 +61,7 @@ function formatDate(ts) {
 
 function roleBadge(role) {
   const map = {
+    user:      ["badge-green", "User"],
     patient:   ["badge-green", "Patient"],
     caregiver: ["badge-blue",  "Caregiver"],
     admin:     ["badge-red",   "Admin"],
@@ -156,7 +157,7 @@ async function loadUsers() {
     // Update KPI
     if ($("kpi-users"))     $("kpi-users").textContent = nonAdmins.length;
     if ($("kpi-users-sub")) $("kpi-users-sub").textContent =
-      `${patients.length} patients · ${caregivers.length} caregivers`;
+      `${nonAdmins.length} registered SmartDose users`;
     if ($("badge-users"))   $("badge-users").textContent = nonAdmins.length;
 
     // Populate users table

@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../services/pairing_service.dart';
-import '../../patient/screens/patient_alerts_tab.dart';
+import '../../dashboard/screens/alerts_tab.dart';
 import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 
 class ConnectedCaregiversScreen extends StatefulWidget {

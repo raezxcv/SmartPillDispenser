@@ -369,7 +369,7 @@ class _AuthScreenState extends State<AuthScreen>
                                       'SmartDose',
                                       style: TextStyle(
                                         fontSize: 26,
-                                        fontWeight: FontWeight.w900,
+                                        fontWeight: FontWeight.w700,
                                         color: Colors.white,
                                         letterSpacing: -0.5,
                                       ),
@@ -379,7 +379,7 @@ class _AuthScreenState extends State<AuthScreen>
                                       'Your smart medication companion',
                                       style: TextStyle(
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w500,
                                         color: Colors.white.withValues(alpha: 0.94),
                                       ),
                                     ),
@@ -443,7 +443,7 @@ class _AuthScreenState extends State<AuthScreen>
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     fontSize: 30,
-                                                    fontWeight: FontWeight.w900,
+                                                    fontWeight: FontWeight.w700,
                                                     color: isDark ? Colors.white : const Color(0xFF1F2937),
                                                     letterSpacing: -0.5,
                                                   ),
@@ -454,7 +454,7 @@ class _AuthScreenState extends State<AuthScreen>
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     fontSize: 14,
-                                                    fontWeight: FontWeight.w700,
+                                                    fontWeight: FontWeight.w500,
                                                     color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                                   ),
                                                 ),
@@ -683,7 +683,7 @@ class _GradientButton extends StatelessWidget {
                         Icon(icon, color: Colors.white, size: 22),
                         const SizedBox(width: 10),
                       ],
-                      Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white)),
+                      Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.white)),
                     ],
                   ),
           ),
@@ -715,7 +715,7 @@ class _FieldLabel extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
             color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
             letterSpacing: 0.8,
           ),

@@ -7,13 +7,11 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'features/auth/screens/splash_screen.dart';
 import 'features/auth/screens/auth_screen.dart';
-import 'features/auth/screens/signup_step1_screen.dart';
 import 'features/auth/screens/signup_step2_screen.dart';
 import 'features/auth/screens/signup_step3_screen.dart';
 import 'features/auth/providers/auth_service.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'features/patient/screens/patient_home_screen.dart';
-import 'features/caregiver/screens/caregiver_home_screen.dart';
+import 'features/dashboard/screens/dashboard_screen.dart';
 import 'shared/widgets/smartdose_loading.dart';
 
 void main() async {
@@ -85,9 +83,7 @@ class _RootNavigatorState extends State<_RootNavigator> {
   // ── Routing helpers ───────────────────────────────────────────────────────
 
   void _pushDashboard(String role, String name) {
-    final Widget dashboard = role == 'caregiver'
-        ? CaregiverHomeScreen(onSignOut: _signOut)
-        : PatientHomeScreen(userName: name, onSignOut: _signOut);
+    final Widget dashboard = PatientHomeScreen(userName: name, onSignOut: _signOut);
     _nav.pushAndRemoveUntil(_fadeRoute(dashboard), (_) => false);
   }
 
@@ -102,9 +98,8 @@ class _RootNavigatorState extends State<_RootNavigator> {
     if (currentUser != null) {
       try {
         final profile = await _auth.getUserProfile(currentUser.uid);
-        final role = profile?['role'] ?? 'patient';
         final name = profile?['name'] ?? currentUser.displayName ?? 'User';
-        _pushDashboard(role, name);
+        _pushDashboard('user', name);
         return;
       } catch (e) {
         debugPrint('Error checking auth session: $e');
@@ -206,17 +201,21 @@ class _SignupFlowState extends State<_SignupFlow>
   Widget? _previousPage;
 
   // Signup draft
-  String _role = 'patient';
+  String _role = 'user';
   late String _name;
   String _phone = '';
   String? _dob;
   String? _gender;
   String? _address;
+  late String _email;
+  String _password = '';
+  String _confirmPassword = '';
 
   @override
   void initState() {
     super.initState();
     _name = widget.initialName;
+    _email = widget.initialEmail;
 
     _slideCtrl = AnimationController(
       vsync: this,
@@ -283,30 +282,22 @@ class _SignupFlowState extends State<_SignupFlow>
 
   // ── Step callbacks ─────────────────────────────────────────────────────────
 
-  void _onStep1Done(String role) {
-    _role = role;
-    _currentStep = 2;
-    _animateToPage(_buildStep2(), forward: true);
-  }
-
-  void _onStep2Done(
+  void _onStep1Done(
       String name, String phone, String? dob, String? gender, String? address) {
     _name = name;
     _phone = phone;
     _dob = dob;
     _gender = gender;
     _address = address;
-    _currentStep = 3;
-    _animateToPage(_buildStep3(), forward: true);
+    _currentStep = 2;
+    _animateToPage(_buildStep2(), forward: true);
   }
 
   void _handleBack() {
     if (_isAnimating || _isCreating) return;
     if (_currentStep > 1) {
       _currentStep--;
-      final Widget target =
-          _currentStep == 1 ? _buildStep1() : _buildStep2();
-      _animateToPage(target, forward: false);
+      _animateToPage(_buildStep1(), forward: false);
     } else {
       if (widget.onGoToLogin != null) {
         widget.onGoToLogin!();
@@ -316,11 +307,19 @@ class _SignupFlowState extends State<_SignupFlow>
     }
   }
 
+  void _handleGoToLogin() {
+    if (widget.onGoToLogin != null) {
+      widget.onGoToLogin!();
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
   void _onSignupSuccess(String role, String name) {
     setState(() {
       _isCreating = false;
       _isStepLoading = false;
-      _currentStep = 4;
+      _currentStep = 3;
     });
     _animateToPage(_buildSuccessScreen(role, name), forward: true);
   }
@@ -336,30 +335,34 @@ class _SignupFlowState extends State<_SignupFlow>
 
   // ── Page builders ──────────────────────────────────────────────────────────
 
-  Widget _buildStep1() => SignupStep1Screen(
+  Widget _buildStep1() => SignupStep2Screen(
         key: const ValueKey('step1'),
+        initialName: _name,
+        initialPhone: _phone,
+        initialDob: _dob,
+        initialGender: _gender,
+        initialAddress: _address,
         onBack: _handleBack,
         onNext: _onStep1Done,
         onRegisterSubmit: _registerSubmit,
       );
 
-  Widget _buildStep2() => SignupStep2Screen(
+  Widget _buildStep2() => SignupStep3Screen(
         key: const ValueKey('step2'),
-        initialName: _name,
-        onBack: _handleBack,
-        onNext: _onStep2Done,
-        onRegisterSubmit: _registerSubmit,
-      );
-
-  Widget _buildStep3() => SignupStep3Screen(
-        key: const ValueKey('step3'),
         role: _role,
         name: _name,
         phone: _phone,
         dob: _dob,
         gender: _gender,
         address: _address,
-        initialEmail: widget.initialEmail,
+        initialEmail: _email,
+        initialPassword: _password,
+        initialConfirmPassword: _confirmPassword,
+        onDraftChanged: (email, password, confirmPassword) {
+          _email = email;
+          _password = password;
+          _confirmPassword = confirmPassword;
+        },
         googleUid: widget.googleUid,
         profilePhotoUrl: widget.profilePhotoUrl,
         onBack: _handleBack,
@@ -373,13 +376,14 @@ class _SignupFlowState extends State<_SignupFlow>
         key: const ValueKey('success'),
         name: name,
         onContinue: () => widget.onSuccess(role, name),
+        onGoToLogin: widget.onGoToLogin,
       );
 
   @override
   Widget build(BuildContext context) {
     final bool showSteps = _currentStep <= 3;
     final int step = _currentStep.clamp(1, 3);
-    final bool isLastStep = _currentStep == 3;
+    final bool isLastStep = _currentStep == 2;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -505,7 +509,7 @@ class _SignupFlowState extends State<_SignupFlow>
                                       'SmartDose',
                                       style: TextStyle(
                                         fontSize: 22,
-                                        fontWeight: FontWeight.w900,
+                                        fontWeight: FontWeight.w700,
                                         color: Colors.white,
                                         letterSpacing: -0.5,
                                       ),
@@ -515,7 +519,7 @@ class _SignupFlowState extends State<_SignupFlow>
                                       'Your smart medication companion',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w500,
                                         color: Colors.white.withValues(alpha: 0.90),
                                       ),
                                     ),
@@ -580,9 +584,9 @@ class _SignupFlowState extends State<_SignupFlow>
                               ),
 
                               // ── Fixed Bottom Action Bar ──────────────────
-                              if (showSteps)
+                              if (_currentStep <= 2)
                                 Container(
-                                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 14),
                                   decoration: BoxDecoration(
                                     color: isDark ? const Color(0xFF1E1E22) : Colors.white,
                                     boxShadow: [
@@ -595,89 +599,120 @@ class _SignupFlowState extends State<_SignupFlow>
                                       ),
                                     ],
                                   ),
-                                  child: Row(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      // Back button (steps 2 & 3 only)
-                                      if (_currentStep >= 2) ...[
-                                        GestureDetector(
-                                          onTap: (_isCreating || _isAnimating) ? null : _handleBack,
-                                          child: AnimatedOpacity(
-                                            duration: const Duration(milliseconds: 200),
-                                            opacity: (_isCreating || _isAnimating) ? 0.35 : 1.0,
-                                            child: Container(
-                                              width: 52,
-                                              height: 52,
-                                              decoration: BoxDecoration(
-                                                color: isDark
-                                                    ? const Color(0xFF27272A)
-                                                    : const Color(0xFFF3F4F6),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: isDark
-                                                      ? const Color(0xFF3F3F46)
-                                                      : const Color(0xFFE5E7EB),
-                                                  width: 1.5,
+                                      Row(
+                                        children: [
+                                          // Back button (steps 2 & 3 only)
+                                          if (_currentStep >= 2) ...[
+                                            GestureDetector(
+                                              onTap: (_isCreating || _isAnimating) ? null : _handleBack,
+                                              child: AnimatedOpacity(
+                                                duration: const Duration(milliseconds: 200),
+                                                opacity: (_isCreating || _isAnimating) ? 0.35 : 1.0,
+                                                child: Container(
+                                                  width: 52,
+                                                  height: 52,
+                                                  decoration: BoxDecoration(
+                                                    color: isDark
+                                                        ? const Color(0xFF27272A)
+                                                        : const Color(0xFFF3F4F6),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: isDark
+                                                          ? const Color(0xFF3F3F46)
+                                                          : const Color(0xFFE5E7EB),
+                                                      width: 1.5,
+                                                    ),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.chevron_left_rounded,
+                                                    color: isDark ? Colors.white : const Color(0xFF374151),
+                                                    size: 28,
+                                                  ),
                                                 ),
                                               ),
-                                              child: Icon(
-                                                Icons.chevron_left_rounded,
-                                                color: isDark ? Colors.white : const Color(0xFF374151),
-                                                size: 28,
+                                            ),
+                                            const SizedBox(width: 12),
+                                          ],
+
+                                          // Continue / Create Account button
+                                          Expanded(
+                                            child: Container(
+                                              height: 52,
+                                              decoration: BoxDecoration(
+                                                gradient: const LinearGradient(
+                                                  colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                                                ),
+                                                borderRadius: BorderRadius.circular(26),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                                                    blurRadius: 14,
+                                                    offset: const Offset(0, 5),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  onTap: _isStepLoading ? null : _stepSubmit,
+                                                  borderRadius: BorderRadius.circular(26),
+                                                  child: Center(
+                                                    child: _isStepLoading
+                                                        ? const SmartDoseLoading(size: 40, color: Colors.white)
+                                                        : Row(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            children: [
+                                                              Text(
+                                                                isLastStep ? 'Create account' : 'Continue',
+                                                                style: const TextStyle(
+                                                                  fontSize: 16,
+                                                                  fontWeight: FontWeight.w600,
+                                                                  color: Colors.white,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 8),
+                                                              Icon(
+                                                                isLastStep
+                                                                    ? Icons.check_circle_rounded
+                                                                    : Icons.arrow_forward_rounded,
+                                                                color: Colors.white,
+                                                                size: 20,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                      ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
 
-                                      // Continue / Create Account button
-                                      Expanded(
-                                        child: Container(
-                                          height: 52,
-                                          decoration: BoxDecoration(
-                                            gradient: const LinearGradient(
-                                              colors: [Color(0xFF00C882), Color(0xFF00A36C)],
+                                      // "Already have an account? Log in" Link
+                                      GestureDetector(
+                                        onTap: (_isCreating || _isAnimating) ? null : _handleGoToLogin,
+                                        child: RichText(
+                                          textAlign: TextAlign.center,
+                                          text: TextSpan(
+                                            text: "Already have an account? ",
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                                             ),
-                                            borderRadius: BorderRadius.circular(26),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: const Color(0xFF00A36C).withValues(alpha: 0.35),
-                                                blurRadius: 14,
-                                                offset: const Offset(0, 5),
+                                            children: const [
+                                              TextSpan(
+                                                text: 'Log in',
+                                                style: TextStyle(
+                                                  color: Color(0xFF00A36C),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
                                             ],
-                                          ),
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            child: InkWell(
-                                              onTap: _isStepLoading ? null : _stepSubmit,
-                                              borderRadius: BorderRadius.circular(26),
-                                              child: Center(
-                                                child: _isStepLoading
-                                                    ? const SmartDoseLoading(size: 40, color: Colors.white)
-                                                    : Row(
-                                                        mainAxisAlignment: MainAxisAlignment.center,
-                                                        children: [
-                                                          Text(
-                                                            isLastStep ? 'Create account' : 'Continue',
-                                                            style: const TextStyle(
-                                                              fontSize: 16,
-                                                              fontWeight: FontWeight.w900,
-                                                              color: Colors.white,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(width: 8),
-                                                          Icon(
-                                                            isLastStep
-                                                                ? Icons.check_circle_rounded
-                                                                : Icons.arrow_forward_rounded,
-                                                            color: Colors.white,
-                                                            size: 20,
-                                                          ),
-                                                        ],
-                                                      ),
-                                              ),
-                                            ),
                                           ),
                                         ),
                                       ),
@@ -753,12 +788,15 @@ class _StepIndicatorState extends State<_StepIndicator>
       animation: _progressAnim,
       builder: (context, _) {
         final double p = _progressAnim.value; // 0.0 to 1.0
+        final double line1Progress = (p / 0.5).clamp(0.0, 1.0);
+        final double line2Progress = ((p - 0.5) / 0.5).clamp(0.0, 1.0);
+
         return Row(
           children: [
             _StepCircle(stepNum: 1, currentStep: widget.currentStep),
-            _AnimatedStepLine(progress: (p * 2).clamp(0.0, 1.0)),
+            _AnimatedStepLine(progress: line1Progress),
             _StepCircle(stepNum: 2, currentStep: widget.currentStep),
-            _AnimatedStepLine(progress: ((p * 2) - 1).clamp(0.0, 1.0)),
+            _AnimatedStepLine(progress: line2Progress),
             _StepCircle(stepNum: 3, currentStep: widget.currentStep),
           ],
         );
@@ -853,11 +891,13 @@ class _AnimatedStepLine extends StatelessWidget {
 class _SignupSuccessScreen extends StatefulWidget {
   final String name;
   final VoidCallback onContinue;
+  final VoidCallback? onGoToLogin;
 
   const _SignupSuccessScreen({
     super.key,
     required this.name,
     required this.onContinue,
+    this.onGoToLogin,
   });
 
   @override
@@ -893,12 +933,15 @@ class _SignupSuccessScreenState extends State<_SignupSuccessScreen>
       curve: Curves.easeOut,
     );
 
-    // Check bounces in → then text fades in
+    // Check bounces in → then text fades in → auto redirect to dashboard
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _checkCtrl.forward();
     });
     Future.delayed(const Duration(milliseconds: 700), () {
       if (mounted) _fadeCtrl.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (mounted) widget.onContinue();
     });
   }
 
@@ -911,9 +954,12 @@ class _SignupSuccessScreenState extends State<_SignupSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -946,70 +992,34 @@ class _SignupSuccessScreenState extends State<_SignupSuccessScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 36),
+            const SizedBox(height: 32),
 
             // Title & subtitle
             FadeTransition(
               opacity: _fadeAnim,
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Account Created!',
                     style: TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1F2937),
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF1F2937),
                       letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Welcome, ${widget.name}!\nYour account has been successfully created.',
+                    'Welcome, ${widget.name}!\nRedirecting to your dashboard...',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.5,
-                      color: Color(0xFF6B7280),
+                      color: isDark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(height: 40),
-
-                  // Continue button
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF00C882), Color(0xFF00A36C)],
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF00A36C)
-                              .withValues(alpha: 0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: widget.onContinue,
-                        borderRadius: BorderRadius.circular(28),
-                        child: const Center(
-                          child: Text(
-                            'Get Started',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 24),
+                  const SmartDoseLoading(size: 36, color: Color(0xFF00A36C)),
                 ],
               ),
             ),

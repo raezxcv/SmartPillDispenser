@@ -9,13 +9,11 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/theme_provider.dart';
-import '../../pairing/screens/pair_caregiver_screen.dart';
-import '../../pairing/screens/connected_caregivers_screen.dart';
-import '../../caregiver/screens/caregiver_connect_patient_screen.dart';
-import '../../caregiver/screens/caregiver_patients_tab.dart';
-import 'compartment_inventory_screen.dart';
+import 'alerts_tab.dart';
+import 'device_connected_screen.dart';
 import 'camera_feed_screen.dart';
-import 'patient_alerts_tab.dart';
+import 'compartment_inventory_screen.dart';
+import '../../pairing/screens/emergency_contacts_screen.dart';
 import '../../../shared/widgets/smartdose_loading.dart';
 
 class PatientProfileTab extends ConsumerStatefulWidget {
@@ -44,7 +42,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
     super.initState();
     final uid = _uid;
     if (uid != null) {
-      _userProfileStream = FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+      _userProfileStream =
+          FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
     }
   }
 
@@ -59,7 +58,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
   static String _getInitials(String name) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return 'SD';
-    final parts = trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    final parts =
+        trimmed.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
@@ -80,14 +80,20 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
   ];
 
   void _showEditProfileSheet(Map<String, dynamic>? data) {
-    final nameCtrl = TextEditingController(text: data?['name'] ?? widget.fallbackName);
+    final nameCtrl =
+        TextEditingController(text: data?['name'] ?? widget.fallbackName);
     final phoneCtrl = TextEditingController(text: data?['phone'] ?? '');
-    final initialDobStr = (data?['dob'] ?? data?['dateOfBirth'] ?? '').toString().trim();
+    final initialDobStr =
+        (data?['dob'] ?? data?['dateOfBirth'] ?? '').toString().trim();
     final dobCtrl = TextEditingController(text: initialDobStr);
     final photoUrlCtrl = TextEditingController(
-      text: data?['photoUrl'] ?? data?['profilePhotoUrl'] ?? FirebaseAuth.instance.currentUser?.photoURL ?? '',
+      text: data?['photoUrl'] ??
+          data?['profilePhotoUrl'] ??
+          FirebaseAuth.instance.currentUser?.photoURL ??
+          '',
     );
-    int selectedGradientIdx = (data?['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
+    int selectedGradientIdx = (data?['avatarGradientIndex'] as int? ?? 0)
+        .clamp(0, _avatarGradients.length - 1);
     final cardColor = Theme.of(context).colorScheme.surface;
     final textColor = Theme.of(context).colorScheme.onSurface;
 
@@ -106,7 +112,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final initials = _getInitials(nameCtrl.text.isEmpty ? widget.fallbackName : nameCtrl.text);
+          final initials = _getInitials(
+              nameCtrl.text.isEmpty ? widget.fallbackName : nameCtrl.text);
           final activeGradient = _avatarGradients[selectedGradientIdx];
 
           return Container(
@@ -117,7 +124,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -136,7 +144,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
+                        icon: Icon(Icons.close_rounded,
+                            color: textColor.withValues(alpha: 0.6)),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -155,7 +164,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                             gradient: LinearGradient(colors: activeGradient),
                             boxShadow: [
                               BoxShadow(
-                                color: activeGradient.last.withValues(alpha: 0.35),
+                                color:
+                                    activeGradient.last.withValues(alpha: 0.35),
                                 blurRadius: 14,
                                 offset: const Offset(0, 4),
                               ),
@@ -163,7 +173,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(46),
-                            child: _buildAvatarImage(photoUrlCtrl.text, initials, 92),
+                            child: _buildAvatarImage(
+                                photoUrlCtrl.text, initials, 92),
                           ),
                         ),
                         // Upload Camera Icon Button on Bottom Right
@@ -171,14 +182,16 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: () => _showUploadImageDialog(ctx, photoUrlCtrl, setSheetState),
+                            onTap: () => _showUploadImageDialog(
+                                ctx, photoUrlCtrl, setSheetState),
                             child: Container(
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
                                 color: const Color(0xFF00A36C),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: cardColor, width: 2.5),
+                                border:
+                                    Border.all(color: cardColor, width: 2.5),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.25),
@@ -187,7 +200,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                                   ),
                                 ],
                               ),
-                              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                              child: const Icon(Icons.camera_alt_rounded,
+                                  color: Colors.white, size: 16),
                             ),
                           ),
                         ),
@@ -200,7 +214,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   // Avatar Gradient Picker
                   Text(
                     'Avatar Background Color',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: textColor.withValues(alpha: 0.7)),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: textColor.withValues(alpha: 0.7)),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -208,7 +225,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     children: List.generate(_avatarGradients.length, (i) {
                       final isSelected = selectedGradientIdx == i;
                       return GestureDetector(
-                        onTap: () => setSheetState(() => selectedGradientIdx = i),
+                        onTap: () =>
+                            setSheetState(() => selectedGradientIdx = i),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 200),
                           margin: const EdgeInsets.symmetric(horizontal: 5),
@@ -216,22 +234,28 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                           height: 34,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: LinearGradient(colors: _avatarGradients[i]),
+                            gradient:
+                                LinearGradient(colors: _avatarGradients[i]),
                             border: Border.all(
-                              color: isSelected ? Colors.white : Colors.transparent,
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
                               width: 2.5,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: _avatarGradients[i].last.withValues(alpha: 0.5),
+                                      color: _avatarGradients[i]
+                                          .last
+                                          .withValues(alpha: 0.5),
                                       blurRadius: 8,
                                     ),
                                   ]
                                 : [],
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
+                              ? const Icon(Icons.check_rounded,
+                                  color: Colors.white, size: 18)
                               : null,
                         ),
                       );
@@ -246,8 +270,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     onChanged: (_) => setSheetState(() {}),
                     decoration: InputDecoration(
                       labelText: 'Full Name',
-                      prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF00A36C)),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      prefixIcon: const Icon(Icons.person_outline_rounded,
+                          color: Color(0xFF00A36C)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -258,8 +284,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
                       labelText: 'Phone Number',
-                      prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF00A36C)),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      prefixIcon: const Icon(Icons.phone_outlined,
+                          color: Color(0xFF00A36C)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -276,14 +304,15 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                         builder: (c, child) => Theme(
                           data: Theme.of(context).copyWith(
                             colorScheme: Theme.of(context).colorScheme.copyWith(
-                              primary: const Color(0xFF00A36C),
-                            ),
+                                  primary: const Color(0xFF00A36C),
+                                ),
                           ),
                           child: child!,
                         ),
                       );
                       if (picked != null) {
-                        final formatted = DateFormat('yyyy-MM-dd').format(picked);
+                        final formatted =
+                            DateFormat('yyyy-MM-dd').format(picked);
                         setSheetState(() {
                           dobCtrl.text = formatted;
                           initialDob = picked;
@@ -292,14 +321,16 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     },
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade400),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.cake_outlined, color: Color(0xFF00A36C)),
+                          const Icon(Icons.cake_outlined,
+                              color: Color(0xFF00A36C)),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -307,11 +338,15 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                               children: [
                                 Text(
                                   'Date of Birth',
-                                  style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6)),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: textColor.withValues(alpha: 0.6)),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  dobCtrl.text.isEmpty ? 'Select Date of Birth' : dobCtrl.text,
+                                  dobCtrl.text.isEmpty
+                                      ? 'Select Date of Birth'
+                                      : dobCtrl.text,
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -323,7 +358,9 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                               ],
                             ),
                           ),
-                          Icon(Icons.calendar_today_rounded, size: 20, color: textColor.withValues(alpha: 0.6)),
+                          Icon(Icons.calendar_today_rounded,
+                              size: 20,
+                              color: textColor.withValues(alpha: 0.6)),
                         ],
                       ),
                     ),
@@ -341,7 +378,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       borderRadius: BorderRadius.circular(26),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF00A36C).withValues(alpha: 0.35),
+                          color:
+                              const Color(0xFF00A36C).withValues(alpha: 0.35),
                           blurRadius: 14,
                           offset: const Offset(0, 4),
                         ),
@@ -360,24 +398,30 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                                 final newPhoto = photoUrlCtrl.text.trim();
                                 try {
                                   if (uid != null) {
-                                    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(uid)
+                                        .set({
                                       'name': nameCtrl.text.trim(),
                                       'phone': phoneCtrl.text.trim(),
                                       'dob': dobCtrl.text.trim(),
                                       'dateOfBirth': dobCtrl.text.trim(),
                                       'photoUrl': newPhoto,
                                       'profilePhotoUrl': newPhoto,
-                                      'avatarGradientIndex': selectedGradientIdx,
+                                      'avatarGradientIndex':
+                                          selectedGradientIdx,
                                     }, SetOptions(merge: true));
                                     try {
-                                      await FirebaseAuth.instance.currentUser?.updatePhotoURL(newPhoto);
+                                      await FirebaseAuth.instance.currentUser
+                                          ?.updatePhotoURL(newPhoto);
                                     } catch (_) {}
                                   }
                                   if (mounted) {
                                     Navigator.pop(ctx);
                                     messenger.showSnackBar(
                                       const SnackBar(
-                                        content: Text('Profile updated successfully!'),
+                                        content: Text(
+                                            'Profile updated successfully!'),
                                         backgroundColor: Color(0xFF00A36C),
                                       ),
                                     );
@@ -387,8 +431,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                                     setSheetState(() => isSaving = false);
                                     messenger.showSnackBar(
                                       SnackBar(
-                                        content: Text('Failed to update profile: $e'),
-                                        backgroundColor: const Color(0xFFEF4444),
+                                        content: Text(
+                                            'Failed to update profile: $e'),
+                                        backgroundColor:
+                                            const Color(0xFFEF4444),
                                       ),
                                     );
                                   }
@@ -396,10 +442,14 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                               },
                         child: Center(
                           child: isSaving
-                              ? const SmartDoseLoading(size: 38, color: Colors.white)
+                              ? const SmartDoseLoading(
+                                  size: 38, color: Colors.white)
                               : const Text(
                                   'Save Changes',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
                                 ),
                         ),
                       ),
@@ -421,7 +471,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       final parsed = DateTime.parse(trimmed);
       final now = DateTime.now();
       int age = now.year - parsed.year;
-      if (now.month < parsed.month || (now.month == parsed.month && now.day < parsed.day)) {
+      if (now.month < parsed.month ||
+          (now.month == parsed.month && now.day < parsed.day)) {
         age--;
       }
       return age > 0 ? 'Age: $age' : 'Age: —';
@@ -444,13 +495,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       return Center(
         child: Text(
           initials,
-          style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900),
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: size * 0.35,
+              fontWeight: FontWeight.w900),
         ),
       );
     }
     if (trimmed.startsWith('data:image')) {
       try {
-        final base64Str = trimmed.contains(',') ? trimmed.split(',').last : trimmed;
+        final base64Str =
+            trimmed.contains(',') ? trimmed.split(',').last : trimmed;
         final bytes = base64Decode(base64Str);
         return Image.memory(
           bytes,
@@ -459,7 +514,11 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
           fit: BoxFit.cover,
           gaplessPlayback: true,
           errorBuilder: (_, __, ___) => Center(
-            child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+            child: Text(initials,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: size * 0.35,
+                    fontWeight: FontWeight.w900)),
           ),
         );
       } catch (_) {}
@@ -472,7 +531,11 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
         fit: BoxFit.cover,
         gaplessPlayback: true,
         errorBuilder: (_, __, ___) => Center(
-          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+          child: Text(initials,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: size * 0.35,
+                  fontWeight: FontWeight.w900)),
         ),
       );
     }
@@ -485,12 +548,20 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
         fit: BoxFit.cover,
         gaplessPlayback: true,
         errorBuilder: (_, __, ___) => Center(
-          child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+          child: Text(initials,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: size * 0.35,
+                  fontWeight: FontWeight.w900)),
         ),
       );
     }
     return Center(
-      child: Text(initials, style: TextStyle(color: Colors.white, fontSize: size * 0.35, fontWeight: FontWeight.w900)),
+      child: Text(initials,
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: size * 0.35,
+              fontWeight: FontWeight.w900)),
     );
   }
 
@@ -520,10 +591,14 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
               children: [
                 Text(
                   'Change Profile Picture',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor),
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor),
                 ),
                 IconButton(
-                  icon: Icon(Icons.close_rounded, color: textColor.withValues(alpha: 0.6)),
+                  icon: Icon(Icons.close_rounded,
+                      color: textColor.withValues(alpha: 0.6)),
                   onPressed: () => Navigator.pop(dlgCtx),
                 ),
               ],
@@ -538,11 +613,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   color: const Color(0xFF00A36C).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.photo_library_rounded, color: Color(0xFF00A36C)),
+                child: const Icon(Icons.photo_library_rounded,
+                    color: Color(0xFF00A36C)),
               ),
-              title: Text('Choose from Gallery', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-              subtitle: Text('Pick an image from your device photos', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Choose from Gallery',
+                  style:
+                      TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+              subtitle: Text('Pick an image from your device photos',
+                  style: TextStyle(
+                      fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               onTap: () async {
                 Navigator.pop(dlgCtx);
                 final picker = ImagePicker();
@@ -553,9 +634,12 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   imageQuality: 80,
                 );
                 if (picked != null) {
-                  final uid = FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
+                  final uid =
+                      FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
                   try {
-                    final ref = FirebaseStorage.instance.ref().child('avatars/$uid.jpg');
+                    final ref = FirebaseStorage.instance
+                        .ref()
+                        .child('avatars/$uid.jpg');
                     await ref.putFile(File(picked.path));
                     final downloadUrl = await ref.getDownloadURL();
                     final timestampedUrl = downloadUrl.contains('?')
@@ -563,10 +647,12 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                         : '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
                     parentSetState(() => photoCtrl.text = timestampedUrl);
                   } catch (e) {
-                    debugPrint('Storage upload warning, fallback to Cloud Base64: $e');
+                    debugPrint(
+                        'Storage upload warning, fallback to Cloud Base64: $e');
                     try {
                       final bytes = await File(picked.path).readAsBytes();
-                      final base64Url = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                      final base64Url =
+                          'data:image/jpeg;base64,${base64Encode(bytes)}';
                       parentSetState(() => photoCtrl.text = base64Url);
                     } catch (_) {}
                   }
@@ -583,11 +669,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   color: const Color(0xFF06B6D4).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF06B6D4)),
+                child: const Icon(Icons.camera_alt_rounded,
+                    color: Color(0xFF06B6D4)),
               ),
-              title: Text('Take a Photo', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
-              subtitle: Text('Use camera to take a new picture', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text('Take a Photo',
+                  style:
+                      TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+              subtitle: Text('Use camera to take a new picture',
+                  style: TextStyle(
+                      fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               onTap: () async {
                 Navigator.pop(dlgCtx);
                 final picker = ImagePicker();
@@ -598,9 +690,12 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   imageQuality: 80,
                 );
                 if (picked != null) {
-                  final uid = FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
+                  final uid =
+                      FirebaseAuth.instance.currentUser?.uid ?? _uid ?? 'user';
                   try {
-                    final ref = FirebaseStorage.instance.ref().child('avatars/$uid.jpg');
+                    final ref = FirebaseStorage.instance
+                        .ref()
+                        .child('avatars/$uid.jpg');
                     await ref.putFile(File(picked.path));
                     final downloadUrl = await ref.getDownloadURL();
                     final timestampedUrl = downloadUrl.contains('?')
@@ -608,10 +703,12 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                         : '$downloadUrl?t=${DateTime.now().millisecondsSinceEpoch}';
                     parentSetState(() => photoCtrl.text = timestampedUrl);
                   } catch (e) {
-                    debugPrint('Storage upload warning, fallback to Cloud Base64: $e');
+                    debugPrint(
+                        'Storage upload warning, fallback to Cloud Base64: $e');
                     try {
                       final bytes = await File(picked.path).readAsBytes();
-                      final base64Url = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+                      final base64Url =
+                          'data:image/jpeg;base64,${base64Encode(bytes)}';
                       parentSetState(() => photoCtrl.text = base64Url);
                     } catch (_) {}
                   }
@@ -629,11 +726,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     color: const Color(0xFFEF4444).withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444)),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: Color(0xFFEF4444)),
                 ),
-                title: const Text('Remove Photo', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
-                subtitle: Text('Use colorful initials avatar instead', style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.6))),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: const Text('Remove Photo',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+                subtitle: Text('Use colorful initials avatar instead',
+                    style: TextStyle(
+                        fontSize: 12, color: textColor.withValues(alpha: 0.6))),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 onTap: () {
                   Navigator.pop(dlgCtx);
                   parentSetState(() => photoCtrl.clear());
@@ -651,7 +754,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
     final themeMode = ref.watch(themeModeProvider);
     final isDarkMode = themeMode == ThemeMode.dark;
 
-    final cardBgColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
+    final cardBgColor = Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
     final primaryTextColor = Theme.of(context).colorScheme.onSurface;
     final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
 
@@ -660,12 +764,19 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
       builder: (context, snapshot) {
         final userData = snapshot.data?.data();
         final name = userData?['name'] ?? widget.fallbackName;
-        final phone = (userData?['phone'] as String? ?? '').isNotEmpty ? userData!['phone'] : 'No phone';
-        final rawDob = (userData?['dob'] ?? userData?['dateOfBirth'] ?? '').toString().trim();
-        final isCaregiver = (userData?['role'] as String? ?? '').toLowerCase() == 'caregiver';
+        final phone = (userData?['phone'] as String? ?? '').isNotEmpty
+            ? userData!['phone']
+            : 'No phone';
+        final rawDob = (userData?['dob'] ?? userData?['dateOfBirth'] ?? '')
+            .toString()
+            .trim();
+        final email = userData?['email'] ??
+            FirebaseAuth.instance.currentUser?.email ??
+            '';
 
         final initials = _getInitials(name);
-        final avatarGradIdx = (userData?['avatarGradientIndex'] as int? ?? 0).clamp(0, _avatarGradients.length - 1);
+        final avatarGradIdx = (userData?['avatarGradientIndex'] as int? ?? 0)
+            .clamp(0, _avatarGradients.length - 1);
         final userAvatarGradient = _avatarGradients[avatarGradIdx];
 
         final prefs = userData?['preferences'] as Map<String, dynamic>?;
@@ -717,7 +828,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const PatientAlertsTab()),
+                        MaterialPageRoute(
+                            builder: (_) => const PatientAlertsTab()),
                       );
                     },
                     child: Container(
@@ -728,12 +840,14 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                            color: Colors.black
+                                .withValues(alpha: isDarkMode ? 0.2 : 0.04),
                             blurRadius: 10,
                           ),
                         ],
                       ),
-                      child: Icon(LucideIcons.bell, color: primaryTextColor, size: 20),
+                      child: Icon(LucideIcons.bell,
+                          color: primaryTextColor, size: 20),
                     ),
                   ),
                 ],
@@ -748,7 +862,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.04),
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.04),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -766,12 +881,18 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                           gradient: LinearGradient(
                             colors: userAvatarGradient,
                           ),
-                          border: Border.all(color: userAvatarGradient.last, width: 2),
+                          border: Border.all(
+                              color: userAvatarGradient.last, width: 2),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(32),
                           child: _buildAvatarImage(
-                            (userData?['photoUrl'] ?? userData?['profilePhotoUrl'] ?? FirebaseAuth.instance.currentUser?.photoURL ?? '').toString(),
+                            (userData?['photoUrl'] ??
+                                    userData?['profilePhotoUrl'] ??
+                                    FirebaseAuth
+                                        .instance.currentUser?.photoURL ??
+                                    '')
+                                .toString(),
                             initials,
                             64,
                           ),
@@ -803,7 +924,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(LucideIcons.edit, color: Color(0xFF00A36C)),
+                      icon: const Icon(LucideIcons.edit,
+                          color: Color(0xFF00A36C)),
                       onPressed: () => _showEditProfileSheet(userData),
                     ),
                   ],
@@ -812,24 +934,21 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
 
               const SizedBox(height: 24),
 
-              // Device & Monitoring Section
-              Text(
-                'Device & Monitoring',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
+              // ── Account Section ──────────────────────────────────────
+              Text('Account',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor)),
               const SizedBox(height: 12),
-
               Container(
                 decoration: BoxDecoration(
                   color: cardBgColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.03),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -837,34 +956,17 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 ),
                 child: Column(
                   children: [
-                    _buildProfileListTile(
-                      icon: LucideIcons.camera,
-                      title: 'Live Camera Feed',
-                      subtitle: 'Visual check of pill tray',
+                    _buildNavTile(
+                      icon: LucideIcons.lock,
+                      title: 'Change Password',
+                      subtitle: 'Update your login password',
                       showDivider: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CameraFeedScreen()),
-                        );
-                      },
+                      onTap: () => _showChangePasswordDialog(),
                     ),
-                    _buildProfileListTile(
-                      icon: LucideIcons.package,
-                      title: 'Medicine Inventory',
-                      subtitle: '10 compartments stock status',
-                      showDivider: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const CompartmentInventoryScreen()),
-                        );
-                      },
-                    ),
-                    _buildProfileListTile(
-                      icon: LucideIcons.cpu,
-                      title: 'About Device',
-                      subtitle: 'SmartDose ESP32 · Firmware v2.4.1',
+                    _buildNavTile(
+                      icon: LucideIcons.mail,
+                      title: 'Email Address',
+                      subtitle: email.isNotEmpty ? email : 'Not set',
                       showDivider: false,
                     ),
                   ],
@@ -873,66 +975,7 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
 
               const SizedBox(height: 24),
 
-              // Care Circle Section
-              Text(
-                'Care Circle',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: primaryTextColor,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              Container(
-                decoration: BoxDecoration(
-                  color: cardBgColor,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildProfileListTile(
-                      icon: LucideIcons.qrCode,
-                      title: isCaregiver ? 'Pair Patient via QR' : 'Pair Caregiver via QR',
-                      subtitle: isCaregiver ? 'Scan or enter patient pairing code' : 'Generate secure QR code for caregivers',
-                      showDivider: true,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => isCaregiver ? const CaregiverConnectPatientScreen() : const PairCaregiverScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildProfileListTile(
-                      icon: LucideIcons.users,
-                      title: isCaregiver ? 'Connected Patients' : 'Connected Caregivers',
-                      subtitle: isCaregiver ? 'Manage active patient connections' : 'Manage active caregiver access',
-                      showDivider: false,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => isCaregiver ? const CaregiverPatientsTab() : const ConnectedCaregiversScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Preferences Section
+              // ── Preferences Section ──────────────────────────────────
               Text(
                 'Preferences',
                 style: TextStyle(
@@ -942,14 +985,14 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 ),
               ),
               const SizedBox(height: 12),
-
               Container(
                 decoration: BoxDecoration(
                   color: cardBgColor,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.03),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -970,8 +1013,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     ),
                     _buildProfileSwitchTile(
                       icon: LucideIcons.messageSquare,
-                      title: isCaregiver ? 'SMS Alerts to Patient' : 'SMS to Caregiver',
-                      subtitle: phone,
+                      title: 'SMS Alert',
+                      subtitle: 'Notify emergency contacts via SIM800L',
                       value: _smsToCaregiverEnabled,
                       onChanged: (val) {
                         setState(() => _smsToCaregiverEnabled = val);
@@ -994,6 +1037,145 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 ),
               ),
 
+              const SizedBox(height: 24),
+
+              // ── Care Circle / Emergency Contacts Section ─────────────
+              Text('Emergency Contacts',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor)),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildNavTile(
+                      icon: LucideIcons.usersRound,
+                      title: 'Emergency Contacts',
+                      subtitle: 'Phone numbers for SIM800L SMS alerts',
+                      showDivider: false,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const EmergencyContactsScreen())),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── Device & Monitoring Section ──────────────────────────
+              Text('Device & Monitoring',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor)),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildNavTile(
+                      icon: Icons.wifi_rounded,
+                      title: 'Device Connected',
+                      subtitle: 'Status, firmware & controls',
+                      showDivider: true,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const DeviceConnectedScreen())),
+                    ),
+                    _buildNavTile(
+                      icon: LucideIcons.scanEye,
+                      title: 'Live Camera Feed',
+                      subtitle: 'Visual check of pill tray',
+                      showDivider: true,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const CameraFeedScreen())),
+                    ),
+                    _buildNavTile(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Medicine Inventory',
+                      subtitle: 'Compartment stock levels',
+                      showDivider: false,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const CompartmentInventoryScreen())),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── About Section ─────────────────────────────────────────
+              Text('About',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryTextColor)),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: cardBgColor,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black
+                          .withValues(alpha: isDarkMode ? 0.2 : 0.03),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildNavTile(
+                      icon: LucideIcons.info,
+                      title: 'App Version',
+                      subtitle: 'SmartDose v1.0.0',
+                      showDivider: true,
+                      onTap: null,
+                    ),
+                    _buildNavTile(
+                      icon: LucideIcons.cpu,
+                      title: 'Device Firmware',
+                      subtitle: 'SmartDose ESP32 · v2.4.1',
+                      showDivider: false,
+                      onTap: null,
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 28),
 
               // Log Out Button
@@ -1003,8 +1185,10 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFEF4444),
-                    side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                    side:
+                        const BorderSide(color: Color(0xFFFCA5A5), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26)),
                   ),
                   onPressed: () => _confirmSignOut(context),
                   icon: const Icon(LucideIcons.logOut, size: 20),
@@ -1044,7 +1228,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 color: Color(0xFFFEE2E2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 32),
+              child: const Icon(Icons.logout_rounded,
+                  color: Color(0xFFEF4444), size: 32),
             ),
             const SizedBox(height: 18),
             Text(
@@ -1074,7 +1259,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: theme.dividerColor, width: 1.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(
@@ -1094,7 +1280,8 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                       backgroundColor: const Color(0xFFEF4444),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
                     ),
                     onPressed: () {
                       Navigator.pop(ctx);
@@ -1115,75 +1302,6 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildProfileListTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool showDivider,
-    VoidCallback? onTap,
-  }) {
-    final primaryTextColor = Theme.of(context).colorScheme.onSurface;
-    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF064E3B) : const Color(0xFFE6F7F0),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: const Color(0xFF00A36C), size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: primaryTextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: secondaryTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: secondaryTextColor, size: 24),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 74,
-            endIndent: 18,
-            color: Theme.of(context).dividerColor,
-          ),
-      ],
     );
   }
 
@@ -1209,7 +1327,9 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF064E3B) : const Color(0xFFE6F7F0),
+                  color: isDark
+                      ? const Color(0xFF064E3B)
+                      : const Color(0xFFE6F7F0),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: const Color(0xFF00A36C), size: 22),
@@ -1254,6 +1374,298 @@ class _PatientProfileTabState extends ConsumerState<PatientProfileTab> {
             color: Theme.of(context).dividerColor,
           ),
       ],
+    );
+  }
+
+  Widget _buildNavTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool showDivider,
+    VoidCallback? onTap,
+  }) {
+    final primaryTextColor = Theme.of(context).colorScheme.onSurface;
+    final secondaryTextColor = primaryTextColor.withValues(alpha: 0.65);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF064E3B)
+                        : const Color(0xFFE6F7F0),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: const Color(0xFF00A36C), size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: primaryTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (onTap != null)
+                  Icon(Icons.chevron_right_rounded,
+                      color: secondaryTextColor, size: 24),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            indent: 74,
+            endIndent: 18,
+            color: Theme.of(context).dividerColor,
+          ),
+      ],
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final user = FirebaseAuth.instance.currentUser;
+    final emailCtrl = TextEditingController(text: user?.email ?? '');
+    bool isSending = false;
+
+    final cardBgColor = Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final primaryTextColor = Theme.of(context).colorScheme.onSurface;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          padding: EdgeInsets.fromLTRB(
+              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: const Color(0xFF00A36C).withValues(alpha: 0.3),
+                      width: 1.5),
+                ),
+                child: const Icon(
+                  LucideIcons.keyRound,
+                  color: Color(0xFF00A36C),
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Reset Password',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: primaryTextColor,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Enter your registered email address below and we'll send you a link to reset your password.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: primaryTextColor.withValues(alpha: 0.6),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    const Icon(Icons.email_rounded,
+                        size: 16, color: Color(0xFF00A36C)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'EMAIL ADDRESS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: primaryTextColor.withValues(alpha: 0.65),
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: TextStyle(
+                    color: primaryTextColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700),
+                decoration: InputDecoration(
+                  hintText: 'you@example.com',
+                  hintStyle: TextStyle(
+                      color: primaryTextColor.withValues(alpha: 0.4),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500),
+                  filled: true,
+                  fillColor: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF9FAFB),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).dividerColor)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide:
+                          BorderSide(color: Theme.of(context).dividerColor)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF00A36C), width: 2)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(
+                            color: Theme.of(context).dividerColor, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                      ),
+                      child: Text('Cancel',
+                          style: TextStyle(
+                              color: primaryTextColor.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                            colors: [Color(0xFF00C882), Color(0xFF00A36C)]),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                              color: const Color(0xFF00A36C)
+                                  .withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4))
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: isSending
+                              ? null
+                              : () async {
+                                  final text = emailCtrl.text.trim();
+                                  if (text.contains('@')) {
+                                    setSheetState(() => isSending = true);
+                                    try {
+                                      await FirebaseAuth.instance
+                                          .sendPasswordResetEmail(email: text);
+                                      if (ctx.mounted) Navigator.pop(ctx);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                                'Password reset link sent! Check your inbox.'),
+                                            backgroundColor: Color(0xFF00A36C),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      setSheetState(() => isSending = false);
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text('Error: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                          borderRadius: BorderRadius.circular(25),
+                          child: Center(
+                            child: isSending
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        color: Colors.white, strokeWidth: 2),
+                                  )
+                                : const Text(
+                                    'Send Link',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

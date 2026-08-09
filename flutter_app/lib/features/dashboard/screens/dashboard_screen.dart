@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'patient_home_tab.dart';
-import 'patient_meds_tab.dart';
-import 'patient_history_tab.dart';
-import 'patient_alerts_tab.dart';
-import 'patient_profile_tab.dart';
+import 'home_tab.dart';
+import 'meds_tab.dart';
+import 'history_tab.dart';
+import 'alerts_tab.dart';
+import 'profile_tab.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class PatientHomeScreen extends StatefulWidget {
@@ -236,8 +236,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             children: [
               _buildNavItem(0, LucideIcons.home, 'Home'),
               _buildNavItem(1, LucideIcons.pill, 'Meds'),
-              _buildNavItem(2, LucideIcons.history, 'History'),
-              _buildNavItem(3, LucideIcons.user, 'Profile'),
+              _buildNavItem(2, LucideIcons.libraryBig, 'History'),
+              _buildNavItem(3, LucideIcons.userRound, 'Profile'),
             ],
           ),
         ),

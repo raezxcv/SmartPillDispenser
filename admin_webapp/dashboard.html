@@ -151,7 +151,23 @@
           </div>
         </div>
 
-        <!-- Recent Activity + Quick Stats -->
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-panel">
+            <p class="chart-panel-title">📈 Dispensing Activity — Last 7 Days</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="chart-dispensing"></canvas>
+            </div>
+          </div>
+          <div class="chart-panel">
+            <p class="chart-panel-title">🔔 Alert Breakdown</p>
+            <div class="chart-canvas-wrap">
+              <canvas id="chart-alert-types"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity + System Health -->
         <div class="dashboard-grid">
           <!-- Recent Users -->
           <div class="panel">
@@ -253,6 +269,13 @@
               </tbody>
             </table>
           </div>
+          <div class="pagination-bar" id="users-pagination" style="display:none;">
+            <span id="users-page-info" style="font-size:13px;color:var(--text-muted);">—</span>
+            <div class="pagination-controls">
+              <button class="page-btn" id="users-prev-btn">← Prev</button>
+              <button class="page-btn" id="users-next-btn">Next →</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -262,6 +285,12 @@
           <div>
             <h2 class="section-heading">Device Fleet</h2>
             <p class="section-subheading">Smart Pill Dispenser units registered in the system</p>
+          </div>
+          <div class="section-actions">
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="device-search" placeholder="Search devices…" class="search-input" />
+            </div>
           </div>
         </div>
         <div class="panel">
@@ -273,11 +302,12 @@
                   <th>Patient</th>
                   <th>Face Enrollment</th>
                   <th>Adherence</th>
+                  <th>Last Dispense</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody id="devices-body">
-                <tr><td colspan="5" class="table-loading">Loading devices…</td></tr>
+                <tr><td colspan="6" class="table-loading">Loading devices…</td></tr>
               </tbody>
             </table>
           </div>
@@ -288,8 +318,23 @@
       <section class="section" id="section-alerts">
         <div class="section-header-bar">
           <div>
-            <h2 class="section-heading">Alerts & Notifications</h2>
+            <h2 class="section-heading">Alerts &amp; Notifications</h2>
             <p class="section-subheading">Missed doses, low stock, and system warnings</p>
+          </div>
+          <div class="section-actions">
+            <select id="severity-filter" class="filter-select">
+              <option value="">All Severities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+              <option value="info">Info</option>
+            </select>
+            <select id="alert-status-filter" class="filter-select">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="resolved">Resolved</option>
+              <option value="dismissed">Dismissed</option>
+            </select>
           </div>
         </div>
         <div class="panel">
@@ -303,10 +348,11 @@
                   <th>Severity</th>
                   <th>Time</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="alerts-body">
-                <tr><td colspan="6" class="table-loading">Loading alerts…</td></tr>
+                <tr><td colspan="7" class="table-loading">Loading alerts…</td></tr>
               </tbody>
             </table>
           </div>
@@ -319,6 +365,23 @@
           <div>
             <h2 class="section-heading">Audit Logs</h2>
             <p class="section-subheading">All admin actions and system events</p>
+          </div>
+          <div class="section-actions">
+            <input type="date" id="log-from-date" class="date-input" title="From date" />
+            <input type="date" id="log-to-date" class="date-input" title="To date" />
+            <select id="log-action-filter" class="filter-select">
+              <option value="">All Actions</option>
+              <option value="suspend_user">Suspend User</option>
+              <option value="reinstate_user">Reinstate User</option>
+              <option value="reset_password">Reset Password</option>
+              <option value="resolve_alert">Resolve Alert</option>
+              <option value="dismiss_alert">Dismiss Alert</option>
+              <option value="update_profile">Update Profile</option>
+            </select>
+            <button class="btn-export" id="export-logs-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
           </div>
         </div>
         <div class="panel">
@@ -350,6 +413,7 @@
           </div>
         </div>
         <div class="settings-grid">
+          <!-- Admin Profile (editable) -->
           <div class="panel">
             <div class="panel-header"><h3 class="panel-title">Admin Profile</h3></div>
             <div class="panel-body">
@@ -360,15 +424,29 @@
                   <p class="settings-email" id="settings-email">—</p>
                 </div>
               </div>
+              <div class="settings-form">
+                <div class="settings-field">
+                  <label class="settings-label" for="settings-name-input">Display Name</label>
+                  <input type="text" id="settings-name-input" class="settings-input" placeholder="Your name" />
+                </div>
+                <div class="settings-actions">
+                  <button class="btn-settings-save" id="save-profile-btn">Save Changes</button>
+                  <button class="btn-settings-secondary" id="change-password-btn">Change Password</button>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- System Info -->
           <div class="panel">
             <div class="panel-header"><h3 class="panel-title">System Info</h3></div>
             <div class="panel-body">
               <div class="info-list">
                 <div class="info-row"><span>Firebase Project</span><strong>smart-pill-dispenser-baa02</strong></div>
-                <div class="info-row"><span>Portal Version</span><strong>v1.0.0</strong></div>
+                <div class="info-row"><span>Portal Version</span><strong>v2.0.0</strong></div>
                 <div class="info-row"><span>Environment</span><strong>Production</strong></div>
+                <div class="info-row"><span>SDK Version</span><strong>Firebase 10.14.0</strong></div>
+                <div class="info-row"><span>Region</span><strong>asia-southeast1</strong></div>
               </div>
             </div>
           </div>
@@ -380,6 +458,68 @@
 
   <!-- ── Toast ──────────────────────────────────────────────────────────── -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ── Confirm Modal ──────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-confirm-box">
+      <div class="modal-confirm-icon" id="confirm-icon">⚠️</div>
+      <h2 class="modal-confirm-title" id="confirm-title">Confirm Action</h2>
+      <p class="modal-confirm-body" id="confirm-body">Are you sure you want to proceed?</p>
+      <div class="modal-confirm-actions">
+        <button class="btn-modal-cancel" id="confirm-cancel-btn">Cancel</button>
+        <button class="btn-modal-confirm" id="confirm-ok-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── User Detail Modal ──────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-user" role="dialog" aria-modal="true" aria-labelledby="modal-user-name">
+    <div class="modal-user-box">
+      <div class="modal-user-header">
+        <div class="modal-user-header-left">
+          <div class="modal-user-avatar" id="modal-user-avatar">U</div>
+          <div>
+            <p class="modal-user-name" id="modal-user-name">—</p>
+            <p class="modal-user-email" id="modal-user-email">—</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="user-modal-close-btn" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-user-body">
+        <div class="modal-field-grid">
+          <div class="modal-field">
+            <span class="modal-field-label">Role</span>
+            <span class="modal-field-value" id="modal-user-role">—</span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Status</span>
+            <span class="modal-field-value" id="modal-user-status">—</span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Phone</span>
+            <span class="modal-field-value" id="modal-user-phone">—</span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Joined</span>
+            <span class="modal-field-value" id="modal-user-joined">—</span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Device ID</span>
+            <span class="modal-field-value" id="modal-user-device">—</span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-field-label">Adherence</span>
+            <span class="modal-field-value" id="modal-user-adherence">—</span>
+          </div>
+        </div>
+        <div class="modal-user-actions" id="modal-user-actions">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Firebase SDK ───────────────────────────────────────────────────── -->
   <script type="module" src="app.js"></script>

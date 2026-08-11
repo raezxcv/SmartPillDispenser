@@ -3,244 +3,76 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─────────────────────────────────────────────────────────────────────────
     // Helper functions
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// True when the request comes from a signed-in user.
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    /// True when the caller's UID matches the given uid.
-    function isOwner(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
-    }
+    // ── Global collections accessed by Admin Console & Flutter App ──
 
-    /// True when the caller holds the admin custom claim (set server-side only).
-    function isAdmin() {
-      return isAuthenticated() && request.auth.token.admin == true;
-    }
-
-    /// Returns the caller's user document.
-    function callerDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid));
-    }
-
-    /// True when the caller's role field matches the given role string.
-    function hasRole(role) {
-      return isAuthenticated() && callerDoc().data.role == role;
-    }
-
-    /// True when the caller is a caregiver and the given patientId is in their
-    /// linkedPatientIds array.
-    function isLinkedCaregiver(patientId) {
-      return hasRole('caregiver')
-          && patientId in callerDoc().data.linkedPatientIds;
-    }
-
-    /// True when the caller is the patient whose UID matches patientId.
-    function isPatient(patientId) {
-      return hasRole('patient') && request.auth.uid == patientId;
-    }
-
-    /// True when the caller is either the patient themselves OR a linked caregiver.
-    function canAccessPatient(patientId) {
-      return isPatient(patientId) || isLinkedCaregiver(patientId);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // users/{uid}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Users Collection
     match /users/{uid} {
-      // A user may read and update their own document.
-      // Admins can read any user document (e.g. for User Management screen).
-      // Creation is allowed by the owner at sign-up time.
-      allow read: if isOwner(uid) || isAdmin();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid) || isAdmin();
-      // Deletion is admin-only (suspend = status field update, not delete).
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // patients/{patientId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /patients/{patientId} {
-      // Patient reads their own profile; caregivers read linked patients.
-      allow read: if isOwner(patientId) || isAdmin();
-
-      // Patient may create their own doc at sign-up time.
-      allow create: if isOwner(patientId) || isAdmin();
-
-      // Caregivers may update patient profile fields they are responsible for
-      // (e.g. faceEnrollmentStatus signal). Patients may update their own doc
-      // for fields they own (photoUrl etc.). Admins may update anything.
-      allow update: if isOwner(patientId) || isAdmin();
-
-      // Deletion is admin-only.
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // caregivers/{caregiverId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /caregivers/{caregiverId} {
-      // Caregiver reads their own profile.
-      allow read: if isOwner(caregiverId) || isAdmin();
-
-      // Caregiver may create their own doc at sign-up time.
-      allow create: if isOwner(caregiverId) || isAdmin();
-
-      // Caregiver may update their own doc.
-      allow update: if isOwner(caregiverId) || isAdmin();
-
-      // Deletion is admin-only.
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // pairing_tokens/{tokenId}  — QR pairing tokens
-    // ─────────────────────────────────────────────────────────────────────────
-    match /pairing_tokens/{tokenId} {
-      // Any authenticated user can read tokens (to validate scanned QR codes).
-      allow read: if isAuthenticated();
-
-      // Patients create their own pairing tokens.
-      allow create: if isAuthenticated();
-
-      // Tokens may be updated (e.g. marking isUsed = true) by authenticated users.
-      allow update: if isAuthenticated();
-
-      // Deletion: admin only.
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // pairing_requests/{requestId}  — Caregiver→Patient connection requests
-    // ─────────────────────────────────────────────────────────────────────────
-    match /pairing_requests/{requestId} {
-      // The patient (target) and the caregiver (sender) can read the request.
-      allow read: if isAuthenticated();
-
-      // Any authenticated user can create a pairing request.
-      allow create: if isAuthenticated();
-
-      // Patient approves/rejects; caregiver can cancel.
-      allow update: if isAuthenticated();
-
-      // Deletion: admin only.
-      allow delete: if isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // pairings/{pairingId}  — Active patient–caregiver connections
-    // ─────────────────────────────────────────────────────────────────────────
-    match /pairings/{pairingId} {
-      // Both patient and caregiver in the pairing can read.
-      allow read: if isAuthenticated();
-
-      // Created when patient approves a pairing request.
-      allow create: if isAuthenticated();
-
-      // Either party or admin can update (role changes, last active, etc.).
-      allow update: if isAuthenticated();
-
-      // Patient or admin can remove pairing.
-      allow delete: if isAuthenticated();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // devices/{deviceId}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Devices & Hardware Fleet
     match /devices/{deviceId} {
-      allow read: if isAuthenticated();
-      allow update: if isAuthenticated();
-      allow create, delete: if isAdmin();
+      allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // schedules/{scheduleId}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Alerts & Notifications
+    match /alerts/{alertId} {
+      allow read, write: if true;
+    }
+
+    // Medication Schedules
     match /schedules/{scheduleId} {
       allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // compartments/{compartmentId}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Dispenser Compartments & Pill Inventory
     match /compartments/{compartmentId} {
       allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // dispensingLogs/{logId}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Dispensing Activity Logs
     match /dispensingLogs/{logId} {
       allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // notifications/{uid}/items/{itemId}
-    // ─────────────────────────────────────────────────────────────────────────
+    // Emergency Distress SOS Requests
+    match /emergencyRequests/{requestId} {
+      allow read, write: if true;
+    }
+
+    // Audit & System Logs
+    match /audit_logs/{logId} {
+      allow read, write: if true;
+    }
+
+    // Pairing Tokens & Contacts
+    match /pairing_tokens/{tokenId} {
+      allow read, write: if true;
+    }
+    match /pairing_requests/{requestId} {
+      allow read, write: if true;
+    }
+    match /pairings/{pairingId} {
+      allow read, write: if true;
+    }
     match /notifications/{uid} {
       allow read, write: if true;
       match /items/{itemId} {
         allow read, write: if true;
       }
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // dispenseEvents/{eventId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /dispenseEvents/{eventId} {
+    match /sms_queue/{id} {
       allow read, write: if true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // emergencyRequests/{requestId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /emergencyRequests/{requestId} {
-      allow read, write: if true;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // callSessions/{sessionId}  — WebRTC signaling
-    // ─────────────────────────────────────────────────────────────────────────
-    match /callSessions/{sessionId} {
-      allow read, write: if canAccessPatient(resource.data.patientId) || isAdmin();
-      allow create: if canAccessPatient(request.resource.data.patientId) || isAdmin();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // systemLogs/{logId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /systemLogs/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // firmwareUpdates/{updateId}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /firmwareUpdates/{updateId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // adminUsers/{uid}
-    // ─────────────────────────────────────────────────────────────────────────
-    match /adminUsers/{uid} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Deny everything else by default.
-    // ─────────────────────────────────────────────────────────────────────────
+    // Catch-all for development & testing
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

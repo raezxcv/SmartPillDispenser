@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export function UsersView() {
-  const { users, createUser, updateUser, deleteUser, updateUserStatus, showToast } = useApp();
+  const { users, createUser, updateUser, deleteUser, updateUserStatus, showToast, darkMode } = useApp();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -30,7 +30,7 @@ export function UsersView() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Form states (Role removed since app is unified)
+  // Form states
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -91,20 +91,16 @@ export function UsersView() {
     setSelectedUser(null);
   };
 
-  const handleResetPassword = (email) => {
-    showToast(`Password reset link dispatched to ${email}`, 'success');
-  };
-
   return (
     <div className="animate-fade-in content-container" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
       
       {/* ── Page Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
             User management
           </h1>
-          <p style={{ fontSize: '13.5px', color: '#6B7280' }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)' }}>
             SmartDose registered users, assigned dispensers, and emergency contacts.
           </p>
         </div>
@@ -141,8 +137,8 @@ export function UsersView() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E6EFE9',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-light)',
               borderRadius: '12px',
               padding: '0 14px',
               height: '42px',
@@ -151,7 +147,7 @@ export function UsersView() {
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
             }}
           >
-            <Search size={16} style={{ color: '#9CA3AF' }} />
+            <Search size={16} style={{ color: 'var(--text-faint)' }} />
             <input
               type="text"
               placeholder="Search by name, email or device ID..."
@@ -161,7 +157,7 @@ export function UsersView() {
                 border: 'none',
                 outline: 'none',
                 fontSize: '13.5px',
-                color: '#111827',
+                color: 'var(--text-main)',
                 width: '100%',
                 backgroundColor: 'transparent'
               }}
@@ -174,11 +170,11 @@ export function UsersView() {
             style={{
               height: '42px',
               padding: '0 14px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E6EFE9',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-light)',
               borderRadius: '12px',
               fontSize: '13px',
-              color: '#374151',
+              color: 'var(--text-main)',
               fontWeight: '500',
               outline: 'none',
               cursor: 'pointer'
@@ -191,7 +187,7 @@ export function UsersView() {
           </select>
         </div>
 
-        <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-subtle)', fontWeight: '500' }}>
           Showing <strong>{filteredUsers.length}</strong> users
         </div>
       </div>
@@ -199,15 +195,15 @@ export function UsersView() {
       {/* ── Main Users Card ── */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E6EFE9',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-light)',
           borderRadius: '20px',
           overflow: 'hidden',
           boxShadow: 'var(--shadow-card)'
         }}
       >
         {filteredUsers.length === 0 ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center', color: '#9CA3AF', fontSize: '14px' }}>
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '14px' }}>
             No users match the search criteria.
           </div>
         ) : (
@@ -221,18 +217,18 @@ export function UsersView() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '18px 24px',
-                  borderBottom: idx === filteredUsers.length - 1 ? 'none' : '1px solid #F0F5F2',
+                  borderBottom: idx === filteredUsers.length - 1 ? 'none' : '1px solid var(--border-light)',
                   cursor: 'pointer',
                   transition: 'background 0.15s'
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F9FBFA')}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
                 <div>
-                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: '#111827' }}>
+                  <div style={{ fontSize: '14.5px', fontWeight: '700', color: 'var(--text-main)' }}>
                     {user.name}
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#6B7280', marginTop: '3px' }}>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-subtle)', marginTop: '3px' }}>
                     {user.email}
                     {user.adherencePercent != null && ` • adherence ${user.adherencePercent}%`}
                     {user.schedulesCount != null && ` • ${user.schedulesCount} schedules`}
@@ -252,7 +248,7 @@ export function UsersView() {
                         padding: '7px',
                         border: 'none',
                         background: 'none',
-                        color: '#6B7280',
+                        color: 'var(--text-subtle)',
                         cursor: 'pointer',
                         borderRadius: '8px',
                         display: 'flex',
@@ -261,12 +257,12 @@ export function UsersView() {
                         transition: 'all 0.15s'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#F0FDF4';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
                         e.currentTarget.style.color = '#059669';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#6B7280';
+                        e.currentTarget.style.color = 'var(--text-subtle)';
                       }}
                     >
                       <Edit2 size={16} />
@@ -282,7 +278,7 @@ export function UsersView() {
                         padding: '7px',
                         border: 'none',
                         background: 'none',
-                        color: '#9CA3AF',
+                        color: 'var(--text-faint)',
                         cursor: 'pointer',
                         borderRadius: '8px',
                         display: 'flex',
@@ -296,7 +292,7 @@ export function UsersView() {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#9CA3AF';
+                        e.currentTarget.style.color = 'var(--text-faint)';
                       }}
                     >
                       <Trash2 size={16} />
@@ -314,7 +310,6 @@ export function UsersView() {
         createPortal(
           <div className="modal-overlay" onClick={() => setIsAddModalOpen(false)}>
             <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-              {/* Modal Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div
@@ -322,8 +317,8 @@ export function UsersView() {
                       width: '42px',
                       height: '42px',
                       borderRadius: '12px',
-                      backgroundColor: '#ECFDF5',
-                      color: '#059669',
+                      backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5',
+                      color: darkMode ? '#34D399' : '#059669',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -332,10 +327,10 @@ export function UsersView() {
                     <UserPlus size={22} strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.01em' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: 0, letterSpacing: '-0.01em' }}>
                       Create New User
                     </h3>
-                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
                       Register user account & pair dispenser hardware.
                     </p>
                   </div>
@@ -345,7 +340,7 @@ export function UsersView() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#9CA3AF',
+                    color: 'var(--text-faint)',
                     cursor: 'pointer',
                     padding: '6px',
                     borderRadius: '8px',
@@ -353,17 +348,14 @@ export function UsersView() {
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3F4F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              {/* Form */}
               <form onSubmit={handleSaveAdd} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Full Name *
                   </label>
                   <input
@@ -377,27 +369,18 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Email Address *
                   </label>
                   <input
@@ -411,28 +394,19 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                       Phone Number
                     </label>
                     <input
@@ -445,27 +419,18 @@ export function UsersView() {
                         height: '44px',
                         padding: '0 14px',
                         borderRadius: '10px',
-                        border: '1px solid #D1D5DB',
-                        backgroundColor: '#F9FBFA',
+                        border: '1px solid var(--border-input)',
+                        backgroundColor: 'var(--bg-input)',
+                        color: 'var(--text-main)',
                         fontSize: '14px',
                         outline: 'none',
                         boxSizing: 'border-box'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#10B981';
-                        e.currentTarget.style.backgroundColor = '#FFFFFF';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#D1D5DB';
-                        e.currentTarget.style.backgroundColor = '#F9FBFA';
-                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                       Dispenser Unit ID
                     </label>
                     <input
@@ -478,29 +443,20 @@ export function UsersView() {
                         height: '44px',
                         padding: '0 14px',
                         borderRadius: '10px',
-                        border: '1px solid #D1D5DB',
-                        backgroundColor: '#F9FBFA',
+                        border: '1px solid var(--border-input)',
+                        backgroundColor: 'var(--bg-input)',
+                        color: 'var(--text-main)',
                         fontSize: '13.5px',
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#10B981';
-                        e.currentTarget.style.backgroundColor = '#FFFFFF';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#D1D5DB';
-                        e.currentTarget.style.backgroundColor = '#F9FBFA';
-                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Emergency Contact Name & Phone
                   </label>
                   <input
@@ -513,21 +469,12 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
@@ -541,9 +488,9 @@ export function UsersView() {
                       height: '42px',
                       padding: '0 20px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#FFFFFF',
-                      color: '#4B5563',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
                       fontSize: '13.5px',
                       fontWeight: '600',
                       cursor: 'pointer'
@@ -587,7 +534,6 @@ export function UsersView() {
             }}
           >
             <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div
@@ -595,8 +541,8 @@ export function UsersView() {
                       width: '42px',
                       height: '42px',
                       borderRadius: '12px',
-                      backgroundColor: '#ECFDF5',
-                      color: '#059669',
+                      backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5',
+                      color: darkMode ? '#34D399' : '#059669',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
@@ -605,10 +551,10 @@ export function UsersView() {
                     <Edit2 size={20} strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.01em' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: 0, letterSpacing: '-0.01em' }}>
                       Edit User Profile
                     </h3>
-                    <p style={{ fontSize: '12.5px', color: '#6B7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
                       Update account details and dispenser mapping.
                     </p>
                   </div>
@@ -621,25 +567,19 @@ export function UsersView() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#9CA3AF',
+                    color: 'var(--text-faint)',
                     cursor: 'pointer',
                     padding: '6px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    borderRadius: '8px'
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3F4F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              {/* Edit Form */}
               <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Full Name
                   </label>
                   <input
@@ -652,27 +592,18 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Email Address
                   </label>
                   <input
@@ -685,28 +616,19 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
-                    }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                       Phone Number
                     </label>
                     <input
@@ -718,27 +640,18 @@ export function UsersView() {
                         height: '44px',
                         padding: '0 14px',
                         borderRadius: '10px',
-                        border: '1px solid #D1D5DB',
-                        backgroundColor: '#F9FBFA',
+                        border: '1px solid var(--border-input)',
+                        backgroundColor: 'var(--bg-input)',
+                        color: 'var(--text-main)',
                         fontSize: '14px',
                         outline: 'none',
                         boxSizing: 'border-box'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#10B981';
-                        e.currentTarget.style.backgroundColor = '#FFFFFF';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#D1D5DB';
-                        e.currentTarget.style.backgroundColor = '#F9FBFA';
-                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                       Dispenser Unit ID
                     </label>
                     <input
@@ -750,29 +663,20 @@ export function UsersView() {
                         height: '44px',
                         padding: '0 14px',
                         borderRadius: '10px',
-                        border: '1px solid #D1D5DB',
-                        backgroundColor: '#F9FBFA',
+                        border: '1px solid var(--border-input)',
+                        backgroundColor: 'var(--bg-input)',
+                        color: 'var(--text-main)',
                         fontSize: '13.5px',
                         fontFamily: 'monospace',
                         outline: 'none',
                         boxSizing: 'border-box'
-                      }}
-                      onFocus={(e) => {
-                        e.currentTarget.style.borderColor = '#10B981';
-                        e.currentTarget.style.backgroundColor = '#FFFFFF';
-                        e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                      }}
-                      onBlur={(e) => {
-                        e.currentTarget.style.borderColor = '#D1D5DB';
-                        e.currentTarget.style.backgroundColor = '#F9FBFA';
-                        e.currentTarget.style.boxShadow = 'none';
                       }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px' }}>
                     Emergency Contact Name & Phone
                   </label>
                   <input
@@ -784,26 +688,16 @@ export function UsersView() {
                       height: '44px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#F9FBFA',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '14px',
                       outline: 'none',
                       boxSizing: 'border-box'
                     }}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#D1D5DB';
-                      e.currentTarget.style.backgroundColor = '#F9FBFA';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
                   />
                 </div>
 
-                {/* Action Buttons */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
                   <button
                     type="button"
@@ -815,9 +709,9 @@ export function UsersView() {
                       height: '42px',
                       padding: '0 20px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#FFFFFF',
-                      color: '#4B5563',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
                       fontSize: '13.5px',
                       fontWeight: '600',
                       cursor: 'pointer'
@@ -840,7 +734,7 @@ export function UsersView() {
                       boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                     }}
                   >
-                    Update Profile
+                    Update User
                   </button>
                 </div>
               </form>
@@ -849,194 +743,19 @@ export function UsersView() {
           document.body
         )}
 
-      {/* ── USER DETAIL / INSPECTION MODAL (Mounted via Portal directly to body) ── */}
-      {selectedUser &&
-        !isEditModalOpen &&
-        createPortal(
-          <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
-            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div
-                    style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: '14px',
-                      backgroundColor: '#ECFDF5',
-                      color: '#059669',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '20px',
-                      fontWeight: '800'
-                    }}
-                  >
-                    {(selectedUser.name || 'U').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h2 style={{ fontSize: '19px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.01em' }}>
-                      {selectedUser.name}
-                    </h2>
-                    <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>
-                      SmartDose User Details
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#9CA3AF',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3F4F6')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Info Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '22px' }}>
-                <div style={{ padding: '12px 14px', backgroundColor: '#F9FBFA', borderRadius: '12px', border: '1px solid #EEF3F0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Status
-                  </div>
-                  <StatusBadge status={selectedUser.status || 'active'} />
-                </div>
-
-                <div style={{ padding: '12px 14px', backgroundColor: '#F9FBFA', borderRadius: '12px', border: '1px solid #EEF3F0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Dispenser Unit ID
-                  </div>
-                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#111827', fontFamily: 'monospace' }}>
-                    {selectedUser.deviceId || 'Unassigned'}
-                  </div>
-                </div>
-
-                <div style={{ padding: '12px 14px', backgroundColor: '#F9FBFA', borderRadius: '12px', border: '1px solid #EEF3F0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Email Address
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#374151', wordBreak: 'break-all', fontWeight: '500' }}>
-                    {selectedUser.email || '—'}
-                  </div>
-                </div>
-
-                <div style={{ padding: '12px 14px', backgroundColor: '#F9FBFA', borderRadius: '12px', border: '1px solid #EEF3F0' }}>
-                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    Phone Number
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>
-                    {selectedUser.phone || '—'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions Bar inside modal */}
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid #F3F4F6', paddingTop: '18px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={(e) => handleOpenEdit(selectedUser, e)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '9px 16px',
-                    borderRadius: '10px',
-                    border: '1px solid #D1D5DB',
-                    backgroundColor: '#FFFFFF',
-                    color: '#374151',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Edit2 size={15} /> Edit Profile
-                </button>
-
-                <button
-                  onClick={() => handleResetPassword(selectedUser.email)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '9px 14px',
-                    borderRadius: '10px',
-                    border: '1px solid #E5E7EB',
-                    backgroundColor: '#FFFFFF',
-                    color: '#4B5563',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Key size={15} /> Reset Pass
-                </button>
-
-                {selectedUser.status === 'suspended' ? (
-                  <button
-                    onClick={() => {
-                      updateUserStatus(selectedUser.id, 'active');
-                      setSelectedUser(null);
-                    }}
-                    style={{
-                      padding: '9px 16px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#10B981',
-                      color: '#FFFFFF',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Reinstate
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      updateUserStatus(selectedUser.id, 'suspended');
-                      setSelectedUser(null);
-                    }}
-                    style={{
-                      padding: '9px 16px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      backgroundColor: '#EF4444',
-                      color: '#FFFFFF',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Suspend
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
-
-      {/* ── DELETE CONFIRMATION MODAL ── */}
+      {/* ── DELETE USER MODAL ── */}
       {deleteTarget && (
         <ConfirmModal
           isOpen={true}
           onClose={() => setDeleteTarget(null)}
-          onConfirm={() => deleteUser(deleteTarget.id, deleteTarget.name)}
+          onConfirm={() => deleteUser(deleteTarget.id)}
           title={`Delete "${deleteTarget.name}"?`}
-          message={`Are you sure you want to permanently remove this user record from SmartDose? This cannot be undone.`}
-          confirmText="Delete Account"
+          message={`Are you sure you want to remove ${deleteTarget.name} and unassign their dispenser unit?`}
+          confirmText="Delete User"
           isDanger={true}
         />
       )}
+
     </div>
   );
 }

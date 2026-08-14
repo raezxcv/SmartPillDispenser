@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, alerts } = useApp();
+  const { activeTab, setActiveTab, alerts = [], darkMode } = useApp();
+  const unreadAlertsCount = alerts.filter(a => !a.isRead).length;
 
   const NAV_SECTIONS = [
     {
@@ -22,14 +23,14 @@ export function Sidebar() {
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'users', label: 'Users', icon: Users },
-        { id: 'alerts', label: 'Alerts', icon: Bell, badge: alerts.length > 0 ? alerts.length : null, badgeColor: '#EF4444' },
+        { id: 'alerts', label: 'Alerts', icon: Bell, badge: unreadAlertsCount > 0 ? unreadAlertsCount : null, badgeColor: '#EF4444' },
       ]
     },
     {
       title: 'MONITORING',
       items: [
         { id: 'medication', label: 'Medication', icon: Pill },
-        { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'inventory', label: 'Compartment inventory', icon: Package },
         { id: 'caregivers', label: 'Caregiver contacts', icon: HeartHandshake },
       ]
     },
@@ -54,15 +55,16 @@ export function Sidebar() {
       style={{
         width: '270px',
         minWidth: '270px',
-        backgroundColor: '#FFFFFF',
-        borderRight: '1px solid #E6EFE9',
+        backgroundColor: 'var(--bg-sidebar)',
+        borderRight: '1px solid var(--border-light)',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
         position: 'sticky',
         top: 0,
         overflowY: 'auto',
-        userSelect: 'none'
+        userSelect: 'none',
+        transition: 'background-color 0.25s ease, border-color 0.25s ease'
       }}
     >
       {/* Brand Header */}
@@ -72,15 +74,15 @@ export function Sidebar() {
           display: 'flex',
           alignItems: 'center',
           gap: '14px',
-          borderBottom: '1px solid #F0F5F2'
+          borderBottom: '1px solid var(--border-light)'
         }}
       >
         <img
           src="/logo.png"
           alt="SmartDose"
           style={{
-            width: '46px',
-            height: '46px',
+            width: '44px',
+            height: '44px',
             borderRadius: '13px',
             objectFit: 'cover',
             boxShadow: '0 3px 10px rgba(16, 185, 129, 0.28)',
@@ -91,10 +93,10 @@ export function Sidebar() {
           }}
         />
         <div>
-          <div style={{ fontSize: '16.5px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+          <div style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
             SmartDose
           </div>
-          <div style={{ fontSize: '12px', fontWeight: '500', color: '#6B7280', marginTop: '2px' }}>
+          <div style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-subtle)', marginTop: '2px' }}>
             Admin console
           </div>
         </div>
@@ -109,7 +111,7 @@ export function Sidebar() {
                 fontSize: '10.5px',
                 fontWeight: '700',
                 letterSpacing: '0.08em',
-                color: '#9CA3AF',
+                color: 'var(--text-faint)',
                 padding: '4px 14px 6px',
                 textTransform: 'uppercase'
               }}
@@ -120,6 +122,9 @@ export function Sidebar() {
               {sec.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
+                const activeBg = darkMode ? '#064E3B' : '#D1FAE5';
+                const activeColor = darkMode ? '#34D399' : '#065F46';
+
                 return (
                   <button
                     key={item.id}
@@ -131,10 +136,10 @@ export function Sidebar() {
                       padding: '10px 14px',
                       borderRadius: '11px',
                       border: 'none',
-                      backgroundColor: isActive ? '#D1FAE5' : 'transparent',
-                      color: isActive ? '#065F46' : '#4B5563',
+                      backgroundColor: isActive ? activeBg : 'transparent',
+                      color: isActive ? activeColor : 'var(--text-muted)',
                       fontWeight: isActive ? '700' : '500',
-                      fontSize: '14px',
+                      fontSize: '13.5px',
                       textAlign: 'left',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
@@ -142,21 +147,21 @@ export function Sidebar() {
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive) {
-                        e.currentTarget.style.backgroundColor = '#F0FDF4';
-                        e.currentTarget.style.color = '#111827';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-hover)';
+                        e.currentTarget.style.color = 'var(--text-main)';
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#4B5563';
+                        e.currentTarget.style.color = 'var(--text-muted)';
                       }
                     }}
                   >
                     <Icon
-                      size={20}
+                      size={19}
                       strokeWidth={isActive ? 2.3 : 1.9}
-                      style={{ color: isActive ? '#059669' : '#6B7280', flexShrink: 0 }}
+                      style={{ color: isActive ? (darkMode ? '#34D399' : '#059669') : 'var(--text-subtle)', flexShrink: 0 }}
                     />
                     <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {item.label}
@@ -167,7 +172,7 @@ export function Sidebar() {
                           backgroundColor: item.badgeColor || '#EF4444',
                           color: '#FFFFFF',
                           fontSize: '11px',
-                          fontWeight: '700',
+                          fontWeight: '800',
                           padding: '1px 7px',
                           borderRadius: '9999px',
                           minWidth: '20px',

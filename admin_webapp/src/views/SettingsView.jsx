@@ -16,11 +16,28 @@ import {
   Flame,
   RefreshCw,
   Trash2,
-  X
+  X,
+  Smartphone,
+  Cpu,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export function SettingsView() {
-  const { currentUser, admins, updateAdminName, addNewAdmin, deleteAdmin, seedLiveFirestoreFleet, firestoreConnected, showToast } = useApp();
+  const {
+    currentUser,
+    admins,
+    systemSettings,
+    updateAdminName,
+    addNewAdmin,
+    deleteAdmin,
+    updateSystemSettings,
+    seedLiveFirestoreFleet,
+    firestoreConnected,
+    darkMode,
+    toggleDarkMode,
+    showToast
+  } = useApp();
 
   // Profile form
   const [profileName, setProfileName] = useState(currentUser.name);
@@ -36,24 +53,19 @@ export function SettingsView() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // Settings preferences
-  const [smsAlerts, setSmsAlerts] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [heartbeatInterval, setHeartbeatInterval] = useState('30');
-
   const handleProfileSave = (e) => {
     e.preventDefault();
     updateAdminName(profileName);
   };
 
   const handlePasswordReset = () => {
-    showToast(`Password reset link dispatched to ${currentUser.email}`, 'success');
+    showToast(`Password reset instructions dispatched to ${currentUser.email}`, 'success');
   };
 
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
     if (!newAdminName.trim() || !newAdminEmail.trim() || !newAdminPassword) {
-      showToast('Please fill in all admin fields.', 'error');
+      showToast('Please fill in all administrator fields.', 'error');
       return;
     }
     setIsSavingAdmin(true);
@@ -76,40 +88,40 @@ export function SettingsView() {
       
       {/* ── Page Header ── */}
       <div>
-        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
           Settings & Administration
         </h1>
-        <p style={{ fontSize: '13.5px', color: '#6B7280' }}>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)' }}>
           Manage your administrator profile, console administrators table, live database sync, and system preferences.
         </p>
       </div>
 
-      {/* ── Section 1: Administrator Profile (Single Column) ── */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6EFE9', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
+      {/* ── Section 1: Administrator Profile ── */}
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
           <div
             style={{
               width: '52px',
               height: '52px',
               borderRadius: '50%',
-              backgroundColor: '#BE123C',
+              backgroundColor: '#00A36C',
               color: '#FFFFFF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '22px',
               fontWeight: '800',
-              boxShadow: '0 3px 10px rgba(190, 18, 60, 0.28)'
+              boxShadow: '0 3px 10px rgba(0, 163, 108, 0.28)'
             }}
           >
             {currentUser.initial || 'A'}
           </div>
           <div>
-            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#111827', margin: 0 }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
               {currentUser.name}
             </h3>
-            <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '2px' }}>
-              {currentUser.email || 'Super Administrator'}
+            <div style={{ fontSize: '13px', color: 'var(--text-subtle)', marginTop: '2px' }}>
+              {currentUser.email || 'Super Administrator'} • <code>Firebase Cloud Auth</code>
             </div>
           </div>
         </div>
@@ -117,7 +129,7 @@ export function SettingsView() {
         <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4B5563', textTransform: 'uppercase', marginBottom: '5px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
                 Display Name
               </label>
               <input
@@ -129,7 +141,9 @@ export function SettingsView() {
                   height: '42px',
                   padding: '0 14px',
                   borderRadius: '10px',
-                  border: '1px solid #D1D5DB',
+                  border: '1px solid var(--border-input)',
+                  backgroundColor: 'var(--bg-input)',
+                  color: 'var(--text-main)',
                   fontSize: '13.5px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -138,7 +152,7 @@ export function SettingsView() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4B5563', textTransform: 'uppercase', marginBottom: '5px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
                 Email Address (Firebase Identity)
               </label>
               <input
@@ -150,9 +164,9 @@ export function SettingsView() {
                   height: '42px',
                   padding: '0 14px',
                   borderRadius: '10px',
-                  border: '1px solid #E5E7EB',
-                  backgroundColor: '#F9FAFB',
-                  color: '#6B7280',
+                  border: '1px solid var(--border-light)',
+                  backgroundColor: 'var(--bg-subtle)',
+                  color: 'var(--text-subtle)',
                   fontSize: '13.5px',
                   boxSizing: 'border-box'
                 }}
@@ -169,16 +183,16 @@ export function SettingsView() {
                 gap: '6px',
                 padding: '9px 18px',
                 borderRadius: '10px',
-                backgroundColor: '#10B981',
+                backgroundColor: '#00A36C',
                 color: '#FFFFFF',
                 fontSize: '13px',
                 fontWeight: '700',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)'
+                boxShadow: '0 2px 8px rgba(0, 163, 108, 0.25)'
               }}
             >
-              <Save size={15} /> Save Changes
+              <Save size={15} /> Save Profile to Database
             </button>
 
             <button
@@ -190,11 +204,11 @@ export function SettingsView() {
                 gap: '6px',
                 padding: '9px 16px',
                 borderRadius: '10px',
-                backgroundColor: '#FFFFFF',
-                color: '#374151',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-main)',
                 fontSize: '13px',
                 fontWeight: '600',
-                border: '1px solid #D1D5DB',
+                border: '1px solid var(--border-input)',
                 cursor: 'pointer'
               }}
             >
@@ -204,15 +218,15 @@ export function SettingsView() {
         </form>
       </div>
 
-      {/* ── Section 2: Console Administrators Table with Top-Right Modal Button ── */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6EFE9', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #E6EFE9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      {/* ── Section 2: Console Administrators Table ── */}
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#111827', margin: 0 }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
               Console Administrators ({admins.length})
             </h3>
-            <p style={{ fontSize: '12.5px', color: '#6B7280', margin: '2px 0 0' }}>
-              Authorized administrators with credentials to access the SmartDose console.
+            <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
+              Authorized administrator accounts synced with Firestore <code>admins</code> collection.
             </p>
           </div>
 
@@ -225,17 +239,17 @@ export function SettingsView() {
               gap: '6px',
               padding: '9px 16px',
               borderRadius: '10px',
-              backgroundColor: '#10B981',
+              backgroundColor: '#00A36C',
               color: '#FFFFFF',
               fontSize: '13px',
               fontWeight: '700',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+              boxShadow: '0 2px 8px rgba(0, 163, 108, 0.3)',
               transition: 'all 0.15s'
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#059669')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#10B981')}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#008b5c')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#00A36C')}
           >
             <UserPlus size={16} strokeWidth={2.4} /> + Add Administrator
           </button>
@@ -244,25 +258,25 @@ export function SettingsView() {
         {/* Admins Table */}
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #E6EFE9', backgroundColor: '#F9FBFA' }}>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Administrator</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Email Address</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Role</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Status</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+            <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'var(--bg-subtle)' }}>
+              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Administrator</th>
+              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Email Address</th>
+              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Role</th>
+              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Status</th>
+              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {admins.map((adm, idx) => (
-              <tr key={adm.id} style={{ borderBottom: idx === admins.length - 1 ? 'none' : '1px solid #F0F5F2' }}>
+              <tr key={adm.id} style={{ borderBottom: idx === admins.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
                 <td style={{ padding: '16px 24px' }}>
-                  <div style={{ fontWeight: '700', color: '#111827' }}>{adm.name}</div>
+                  <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{adm.name}</div>
                 </td>
-                <td style={{ padding: '16px 24px', color: '#4B5563', fontFamily: 'monospace' }}>
+                <td style={{ padding: '16px 24px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                   {adm.email}
                 </td>
                 <td style={{ padding: '16px 24px' }}>
-                  <span style={{ backgroundColor: '#F3F4F6', color: '#374151', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>
+                  <span style={{ backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5', color: darkMode ? '#34D399' : '#047857', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>
                     Super Admin
                   </span>
                 </td>
@@ -278,7 +292,7 @@ export function SettingsView() {
                         padding: '6px',
                         border: 'none',
                         background: 'none',
-                        color: '#9CA3AF',
+                        color: 'var(--text-faint)',
                         cursor: 'pointer',
                         borderRadius: '6px',
                         transition: 'all 0.15s'
@@ -289,7 +303,7 @@ export function SettingsView() {
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '#9CA3AF';
+                        e.currentTarget.style.color = 'var(--text-faint)';
                       }}
                     >
                       <Trash2 size={16} />
@@ -302,8 +316,8 @@ export function SettingsView() {
         </table>
       </div>
 
-      {/* ── Section 3: Live Firebase Cloud Sync ── */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6EFE9', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
+      {/* ── Section 3: Live Firebase Cloud Database Sync ── */}
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
@@ -311,8 +325,8 @@ export function SettingsView() {
                 width: '44px',
                 height: '44px',
                 borderRadius: '12px',
-                backgroundColor: '#FEF3C7',
-                color: '#D97706',
+                backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7',
+                color: darkMode ? '#FBBF24' : '#D97706',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -322,28 +336,35 @@ export function SettingsView() {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
                   Live Firebase Firestore Database
                 </h3>
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    backgroundColor: firestoreConnected ? '#D1FAE5' : '#FEF3C7',
-                    color: firestoreConnected ? '#047857' : '#B45309',
-                    fontSize: '11px',
+                    gap: '5px',
+                    backgroundColor: firestoreConnected
+                      ? (darkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5')
+                      : (darkMode ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7'),
+                    color: firestoreConnected
+                      ? (darkMode ? '#34D399' : '#047857')
+                      : (darkMode ? '#FBBF24' : '#B45309'),
+                    border: firestoreConnected
+                      ? (darkMode ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid #A7F3D0')
+                      : (darkMode ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid #FDE68A'),
+                    fontSize: '11.5px',
                     fontWeight: '700',
-                    padding: '2px 8px',
+                    padding: '3px 9px',
                     borderRadius: '9999px'
                   }}
                 >
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: firestoreConnected ? '#10B981' : '#F59E0B' }} />
-                  {firestoreConnected ? 'Live Cloud Connected' : 'Online / Ready'}
+                  {firestoreConnected ? 'Live Cloud Connected' : 'Ready'}
                 </span>
               </div>
-              <div style={{ fontSize: '12.5px', color: '#6B7280', marginTop: '2px' }}>
-                Project: <code>smart-pill-dispenser-baa02</code> • Schema: <code>users</code>, <code>admins</code>, <code>contacts</code>, <code>devices</code>, <code>alerts</code>, <code>schedules</code>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-subtle)', marginTop: '2px' }}>
+                Project: <code>smart-pill-dispenser-baa02</code> • Synced Collections: <code>users</code>, <code>admins</code>, <code>compartments</code>, <code>devices</code>, <code>alerts</code>, <code>dispensingLogs</code>
               </div>
             </div>
           </div>
@@ -358,13 +379,13 @@ export function SettingsView() {
               gap: '8px',
               padding: '10px 18px',
               borderRadius: '10px',
-              backgroundColor: '#10B981',
+              backgroundColor: '#00A36C',
               color: '#FFFFFF',
               fontSize: '13.5px',
               fontWeight: '700',
               border: 'none',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+              boxShadow: '0 4px 12px rgba(0, 163, 108, 0.3)',
               transition: 'all 0.15s'
             }}
           >
@@ -374,55 +395,84 @@ export function SettingsView() {
         </div>
       </div>
 
-      {/* ── Section 4: System & Gateway Preferences ── */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6EFE9', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
-        <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: '#111827', marginBottom: '14px' }}>
-          Gateway & Fleet Preferences
+      {/* ── Section 4: System & Gateway Preferences (Persisted to Firestore) ── */}
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
+        <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '14px' }}>
+          Gateway & Fleet Preferences (Real Firestore Sync)
         </h3>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
             <div>
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>SMS Emergency Gateway</div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Dispatch instant SMS alerts to paired caregiver contacts</div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main)' }}>Theme Appearance (Dark Mode)</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Switch console interface between light and dark themes</div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-input)',
+                backgroundColor: 'var(--bg-subtle)',
+                color: darkMode ? '#FBBF24' : '#6B7280',
+                cursor: 'pointer',
+                fontWeight: '700',
+                fontSize: '12px'
+              }}
+            >
+              {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+              {darkMode ? 'Dark Enabled' : 'Light Mode'}
+            </button>
+          </label>
+
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main)' }}>SMS Emergency Gateway</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Dispatch instant SMS alerts to paired caregiver contacts</div>
             </div>
             <input
               type="checkbox"
-              checked={smsAlerts}
-              onChange={(e) => { setSmsAlerts(e.target.checked); showToast('SMS Gateway updated'); }}
-              style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
+              checked={systemSettings.smsAlerts ?? true}
+              onChange={(e) => updateSystemSettings({ smsAlerts: e.target.checked })}
+              style={{ width: '18px', height: '18px', accentColor: '#00A36C', cursor: 'pointer' }}
             />
           </label>
 
           <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
             <div>
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827' }}>FCM Push Notifications</div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Send real-time alerts to caregiver mobile devices</div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-main)' }}>FCM Push Notifications (100% Free)</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Send real-time alerts to caregiver mobile devices</div>
             </div>
             <input
               type="checkbox"
-              checked={pushNotifications}
-              onChange={(e) => { setPushNotifications(e.target.checked); showToast('FCM Push notifications updated'); }}
-              style={{ width: '18px', height: '18px', accentColor: '#10B981', cursor: 'pointer' }}
+              checked={systemSettings.pushNotifications ?? true}
+              onChange={(e) => updateSystemSettings({ pushNotifications: e.target.checked })}
+              style={{ width: '18px', height: '18px', accentColor: '#00A36C', cursor: 'pointer' }}
             />
           </label>
 
-          <div style={{ borderTop: '1px solid #F0F5F2', paddingTop: '12px' }}>
-            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4B5563', textTransform: 'uppercase', marginBottom: '5px' }}>
+          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
+            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
               Controller Heartbeat Frequency
             </label>
             <select
-              value={heartbeatInterval}
-              onChange={(e) => { setHeartbeatInterval(e.target.value); showToast('Heartbeat frequency updated'); }}
+              value={systemSettings.heartbeatInterval || '30'}
+              onChange={(e) => updateSystemSettings({ heartbeatInterval: e.target.value })}
               style={{
                 width: '100%',
-                height: '40px',
+                height: '42px',
                 padding: '0 12px',
                 borderRadius: '10px',
-                border: '1px solid #D1D5DB',
+                border: '1px solid var(--border-input)',
                 fontSize: '13px',
                 outline: 'none',
-                backgroundColor: '#FFFFFF'
+                backgroundColor: 'var(--bg-input)',
+                color: 'var(--text-main)',
+                fontWeight: '600'
               }}
             >
               <option value="15">15 Seconds (Real-time tracking)</option>
@@ -433,28 +483,28 @@ export function SettingsView() {
         </div>
       </div>
 
-      {/* ── ADD ADMINISTRATOR MODAL (Mounted via Portal directly to body) ── */}
+      {/* ── ADD ADMINISTRATOR MODAL ── */}
       {isAddAdminOpen &&
         createPortal(
           <div className="modal-overlay" onClick={() => setIsAddAdminOpen(false)}>
             <div className="modal-dialog" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5', color: darkMode ? '#34D399' : '#00A36C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <UserPlus size={20} strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
                       Add Administrator
                     </h3>
-                    <p style={{ fontSize: '12px', color: '#6B7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
                       Create console credentials in Firebase.
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setIsAddAdminOpen(false)}
-                  style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '6px' }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', padding: '6px' }}
                 >
                   <X size={20} />
                 </button>
@@ -462,7 +512,7 @@ export function SettingsView() {
 
               <form onSubmit={handleCreateAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Admin Full Name *
                   </label>
                   <input
@@ -476,7 +526,9 @@ export function SettingsView() {
                       height: '42px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '13.5px',
                       outline: 'none',
                       boxSizing: 'border-box'
@@ -485,7 +537,7 @@ export function SettingsView() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Admin Email Address *
                   </label>
                   <input
@@ -499,7 +551,9 @@ export function SettingsView() {
                       height: '42px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '13.5px',
                       outline: 'none',
                       boxSizing: 'border-box'
@@ -508,7 +562,7 @@ export function SettingsView() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Temporary Password *
                   </label>
                   <input
@@ -522,7 +576,9 @@ export function SettingsView() {
                       height: '42px',
                       padding: '0 14px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'var(--bg-input)',
+                      color: 'var(--text-main)',
                       fontSize: '13.5px',
                       outline: 'none',
                       boxSizing: 'border-box'
@@ -538,9 +594,9 @@ export function SettingsView() {
                       height: '40px',
                       padding: '0 18px',
                       borderRadius: '10px',
-                      border: '1px solid #D1D5DB',
-                      backgroundColor: '#FFFFFF',
-                      color: '#4B5563',
+                      border: '1px solid var(--border-input)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
                       fontSize: '13px',
                       fontWeight: '600',
                       cursor: 'pointer'
@@ -556,12 +612,12 @@ export function SettingsView() {
                       padding: '0 22px',
                       borderRadius: '10px',
                       border: 'none',
-                      backgroundColor: '#10B981',
+                      backgroundColor: '#00A36C',
                       color: '#FFFFFF',
                       fontSize: '13.5px',
                       fontWeight: '700',
                       cursor: 'pointer',
-                      boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)'
+                      boxShadow: '0 3px 10px rgba(0, 163, 108, 0.3)'
                     }}
                   >
                     {isSavingAdmin ? 'Creating...' : 'Create Admin'}

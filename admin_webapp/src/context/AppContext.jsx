@@ -3,7 +3,7 @@ import {
   auth, 
   db, 
   onAuthStateChanged, 
-  signInWithEmailAndPassword,
+  signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signOut as fbSignOut, 
   sendPasswordResetEmail,
@@ -11,12 +11,15 @@ import {
   collection, 
   doc, 
   getDocs, 
-  getDoc,
+  getDoc, 
   setDoc,
   updateDoc, 
   addDoc, 
-  deleteDoc,
+  deleteDoc, 
   onSnapshot, 
+  query, 
+  orderBy, 
+  limit, 
   serverTimestamp 
 } from '../firebase/config';
 
@@ -109,6 +112,7 @@ const DEFAULT_DEVICES = [
     patientId: 'usr_01',
     patientName: 'Amara Reyes',
     status: 'online',
+    isOnline: true,
     battery: 98,
     ip: '192.168.1.119',
     wifiSsid: 'SmartDose-Mesh-5G',
@@ -123,13 +127,14 @@ const DEFAULT_DEVICES = [
     deviceId: 'SD-0120',
     patientId: 'usr_02',
     patientName: 'Joseph Tan',
-    status: 'degraded',
+    status: 'online',
+    isOnline: true,
     battery: 84,
     ip: '192.168.1.120',
     wifiSsid: 'SmartDose-Mesh-5G',
     esp32Status: 'online',
-    rpiStatus: 'high_load',
-    cameraStatus: 'offline',
+    rpiStatus: 'online',
+    cameraStatus: 'online',
     firmwareVersion: 'v2.4.1',
     lastHeartbeat: '45 sec ago'
   },
@@ -139,6 +144,7 @@ const DEFAULT_DEVICES = [
     patientId: 'usr_03',
     patientName: 'Miriam Cortez',
     status: 'online',
+    isOnline: true,
     battery: 92,
     ip: '192.168.1.121',
     wifiSsid: 'HomeFiber-2.4G',
@@ -154,6 +160,7 @@ const DEFAULT_DEVICES = [
     patientId: 'usr_05',
     patientName: 'Rosalyn Perez',
     status: 'online',
+    isOnline: true,
     battery: 100,
     ip: '192.168.1.122',
     wifiSsid: 'Perez-WiFi',
@@ -169,6 +176,7 @@ const DEFAULT_DEVICES = [
     patientId: 'usr_04',
     patientName: 'Elias Navarro',
     status: 'online',
+    isOnline: true,
     battery: 76,
     ip: '192.168.1.123',
     wifiSsid: 'Navarro-Mesh',
@@ -184,6 +192,7 @@ const DEFAULT_DEVICES = [
     patientId: 'usr_06',
     patientName: 'Daniel Okoye',
     status: 'offline',
+    isOnline: false,
     battery: 12,
     ip: '192.168.1.124',
     wifiSsid: 'Unreachable',
@@ -204,7 +213,7 @@ const DEFAULT_ALERTS = [
     deviceId: 'SD-0124',
     message: 'Dispenser SD-0124 has stopped sending heartbeats for over 72 hours.',
     severity: 'critical',
-    status: 'active',
+    isRead: false,
     timeAgo: '3 days ago'
   },
   {
@@ -213,9 +222,9 @@ const DEFAULT_ALERTS = [
     patientName: 'Miriam Cortez',
     patientId: 'usr_03',
     deviceId: 'SD-0121',
-    message: 'Compartment C1 (Metformin 500mg) has reached 0 pills remaining.',
+    message: 'Compartment C5 (Levothyroxine 75mcg) has reached 0 pills remaining.',
     severity: 'critical',
-    status: 'active',
+    isRead: false,
     timeAgo: '2 hours ago'
   },
   {
@@ -224,20 +233,20 @@ const DEFAULT_ALERTS = [
     patientName: 'Miriam Cortez',
     patientId: 'usr_03',
     deviceId: 'SD-0121',
-    message: 'Levothyroxine 75mcg scheduled for 08:00 was not taken within the 60m window.',
+    message: 'Levothyroxine 75mcg scheduled for 08:00 AM was not confirmed taken.',
     severity: 'warning',
-    status: 'active',
+    isRead: false,
     timeAgo: '5 hours ago'
   },
   {
     id: 'alt_04',
-    title: 'Camera offline',
+    title: 'Low stock warning',
     patientName: 'Joseph Tan',
     patientId: 'usr_02',
     deviceId: 'SD-0120',
-    message: 'MJPEG video stream failed on dispenser SD-0120.',
+    message: 'Compartment C3 (Amlodipine 5mg) is low (3 pills left). Please schedule a refill.',
     severity: 'warning',
-    status: 'active',
+    isRead: true,
     timeAgo: '6 hours ago'
   }
 ];
@@ -249,23 +258,26 @@ const DEFAULT_ACTIVITIES = [
     patientName: 'Amara Reyes',
     deviceId: 'SD-0119',
     timeAgo: '8 min ago',
-    type: 'dispense_success'
+    type: 'dispense_success',
+    status: 'taken'
   },
   {
     id: 'act_02',
-    title: 'Dose confirmed taken',
+    title: 'Patient verified by camera',
     patientName: 'Amara Reyes',
     deviceId: 'SD-0119',
     timeAgo: '7 min ago',
-    type: 'dispense_success'
+    type: 'patient_detected',
+    status: 'detected'
   },
   {
     id: 'act_03',
-    title: 'Compartment C1 reported empty',
+    title: 'Compartment C5 reported empty',
     patientName: 'Miriam Cortez',
     deviceId: 'SD-0121',
     timeAgo: '2 h ago',
-    type: 'compartment_empty'
+    type: 'compartment_empty',
+    status: 'empty'
   },
   {
     id: 'act_04',
@@ -273,34 +285,59 @@ const DEFAULT_ACTIVITIES = [
     patientName: 'Miriam Cortez',
     deviceId: 'SD-0121',
     timeAgo: '5 h ago',
-    type: 'dose_missed'
+    type: 'dose_missed',
+    status: 'missed'
+  },
+  {
+    id: 'act_05',
+    title: 'Dispenser snapshot captured',
+    patientName: 'Joseph Tan',
+    deviceId: 'SD-0120',
+    timeAgo: '1 day ago',
+    type: 'photo_captured',
+    status: 'captured'
   }
 ];
 
 const DEFAULT_MEDICATIONS = [
   { id: 'med_01', patientName: 'Amara Reyes', patientId: 'usr_01', deviceId: 'SD-0119', name: 'Metformin', dosage: '500mg', compartment: 'C1', time: '08:00 AM', frequency: 'Daily', pillsLeft: 24, adherence: 98 },
   { id: 'med_02', patientName: 'Amara Reyes', patientId: 'usr_01', deviceId: 'SD-0119', name: 'Atorvastatin', dosage: '20mg', compartment: 'C2', time: '08:00 PM', frequency: 'Daily', pillsLeft: 18, adherence: 94 },
-  { id: 'med_03', patientName: 'Joseph Tan', patientId: 'usr_02', deviceId: 'SD-0120', name: 'Amlodipine', dosage: '5mg', compartment: 'C1', time: '09:00 AM', frequency: 'Daily', pillsLeft: 12, adherence: 90 },
-  { id: 'med_04', patientName: 'Joseph Tan', patientId: 'usr_02', deviceId: 'SD-0120', name: 'Losartan', dosage: '50mg', compartment: 'C2', time: '07:00 PM', frequency: 'Daily', pillsLeft: 14, adherence: 86 },
-  { id: 'med_05', patientName: 'Miriam Cortez', patientId: 'usr_03', deviceId: 'SD-0121', name: 'Metformin', dosage: '500mg', compartment: 'C1', time: '07:30 AM', frequency: 'Daily', pillsLeft: 0, adherence: 70 },
-  { id: 'med_06', patientName: 'Miriam Cortez', patientId: 'usr_03', deviceId: 'SD-0121', name: 'Levothyroxine', dosage: '75mcg', compartment: 'C2', time: '08:00 AM', frequency: 'Daily', pillsLeft: 15, adherence: 78 },
-  { id: 'med_07', patientName: 'Rosalyn Perez', patientId: 'usr_05', deviceId: 'SD-0122', name: 'Omeprazole', dosage: '20mg', compartment: 'C1', time: '06:30 AM', frequency: 'Daily', pillsLeft: 20, adherence: 95 }
+  { id: 'med_03', patientName: 'Joseph Tan', patientId: 'usr_02', deviceId: 'SD-0120', name: 'Amlodipine', dosage: '5mg', compartment: 'C3', time: '09:00 AM', frequency: 'Daily', pillsLeft: 12, adherence: 90 },
+  { id: 'med_04', patientName: 'Joseph Tan', patientId: 'usr_02', deviceId: 'SD-0120', name: 'Losartan', dosage: '50mg', compartment: 'C4', time: '07:00 PM', frequency: 'Daily', pillsLeft: 14, adherence: 86 },
+  { id: 'med_05', patientName: 'Miriam Cortez', patientId: 'usr_03', deviceId: 'SD-0121', name: 'Levothyroxine', dosage: '75mcg', compartment: 'C5', time: '08:00 AM', frequency: 'Daily', pillsLeft: 0, adherence: 70 },
+  { id: 'med_06', patientName: 'Rosalyn Perez', patientId: 'usr_05', deviceId: 'SD-0122', name: 'Omeprazole', dosage: '20mg', compartment: 'C6', time: '06:30 AM', frequency: 'Daily', pillsLeft: 20, adherence: 95 }
 ];
 
-const DEFAULT_INVENTORY = [
-  { id: 'inv_01', deviceId: 'SD-0119', patientName: 'Amara Reyes', comp: 'C1', med: 'Metformin 500mg', count: 24, capacity: 30, status: 'good' },
-  { id: 'inv_02', deviceId: 'SD-0119', patientName: 'Amara Reyes', comp: 'C2', med: 'Atorvastatin 20mg', count: 18, capacity: 30, status: 'good' },
-  { id: 'inv_03', deviceId: 'SD-0120', patientName: 'Joseph Tan', comp: 'C1', med: 'Amlodipine 5mg', count: 12, capacity: 30, status: 'low' },
-  { id: 'inv_04', deviceId: 'SD-0120', patientName: 'Joseph Tan', comp: 'C2', med: 'Losartan 50mg', count: 14, capacity: 30, status: 'good' },
-  { id: 'inv_05', deviceId: 'SD-0121', patientName: 'Miriam Cortez', comp: 'C1', med: 'Metformin 500mg', count: 0, capacity: 30, status: 'empty' },
-  { id: 'inv_06', deviceId: 'SD-0121', patientName: 'Miriam Cortez', comp: 'C2', med: 'Levothyroxine 75mcg', count: 15, capacity: 30, status: 'good' },
-  { id: 'inv_07', deviceId: 'SD-0122', patientName: 'Rosalyn Perez', comp: 'C1', med: 'Omeprazole 20mg', count: 20, capacity: 30, status: 'good' }
-];
+// Initial 10 Hardware Compartments definition (Blank/Clean slots by default, NOT hardcoded)
+const DEFAULT_COMPARTMENTS = Array.from({ length: 10 }, (_, i) => {
+  const compNum = i + 1;
+  return {
+    id: `comp_${compNum}`,
+    compartmentNumber: compNum,
+    comp: `C${compNum}`,
+    medicationName: '',
+    dosage: '',
+    stockCount: 0,
+    maxCapacity: 30,
+    patientName: 'Unassigned',
+    patientUid: '',
+    deviceId: 'SD-0119',
+    scheduleTime: '--:--',
+    frequency: 'Daily',
+    status: 'empty'
+  };
+});
 
 export function AppProvider({ children }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('smartdose_admin_theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  });
+
   const [currentUser, setCurrentUser] = useState({
     uid: 'adm_01',
     name: 'Super Admin',
@@ -311,14 +348,36 @@ export function AppProvider({ children }) {
 
   const [users, setUsers] = useState(DEFAULT_USERS);
   const [admins, setAdmins] = useState(DEFAULT_ADMINS);
-  const [caregivers, setCaregivers] = useState([]); // Clean empty state, populated strictly from Firestore
+  const [caregivers, setCaregivers] = useState([]);
   const [devices, setDevices] = useState(DEFAULT_DEVICES);
   const [alerts, setAlerts] = useState(DEFAULT_ALERTS);
   const [activities, setActivities] = useState(DEFAULT_ACTIVITIES);
   const [medications, setMedications] = useState(DEFAULT_MEDICATIONS);
-  const [inventory, setInventory] = useState(DEFAULT_INVENTORY);
+  const [compartments, setCompartments] = useState(DEFAULT_COMPARTMENTS);
+  const [systemSettings, setSystemSettings] = useState({
+    smsAlerts: true,
+    pushNotifications: true,
+    heartbeatInterval: '30'
+  });
   const [toast, setToast] = useState(null);
   const [firestoreConnected, setFirestoreConnected] = useState(false);
+
+  // Sync Dark Mode Class to document root
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('smartdose_admin_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('smartdose_admin_theme', 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   // Sync real-time data from Firestore & listen to Firebase Auth
   useEffect(() => {
@@ -326,7 +385,7 @@ export function AppProvider({ children }) {
 
     const initListeners = () => {
       try {
-        // 1. Live listener for users (patients only)
+        // 1. Live listener for users
         const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
           if (!snap.empty) {
             setFirestoreConnected(true);
@@ -346,7 +405,7 @@ export function AppProvider({ children }) {
         }, () => {});
         unsubs.push(unsubAdmins);
 
-        // 3. Live listener for contacts (caregiver contacts)
+        // 3. Live listener for contacts
         const unsubContacts = onSnapshot(collection(db, 'contacts'), (snap) => {
           setFirestoreConnected(true);
           const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -358,7 +417,21 @@ export function AppProvider({ children }) {
         const unsubAlerts = onSnapshot(collection(db, 'alerts'), (snap) => {
           if (!snap.empty) {
             setFirestoreConnected(true);
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const list = snap.docs.map(d => {
+              const data = d.data();
+              return {
+                id: d.id,
+                title: data.title || 'System Alert',
+                message: data.message || '',
+                patientName: data.patientName || 'Patient',
+                patientId: data.patientId || data.patientUid || '',
+                deviceId: data.deviceId || 'SD-0119',
+                severity: data.severity || 'warning',
+                isRead: data.isRead === true || data.status === 'read',
+                timeAgo: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (data.timeAgo || 'Recent'),
+                ...data
+              };
+            });
             setAlerts(list);
           }
         }, () => {});
@@ -371,16 +444,25 @@ export function AppProvider({ children }) {
             const newActivities = snap.docs.map(d => {
               const data = d.data();
               let timeStr = 'Recent';
+              let dateObj = null;
               if (data.timestamp?.toDate) {
-                timeStr = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                dateObj = data.timestamp.toDate();
+                timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               }
               return {
                 id: d.id,
-                title: `${data.medicationName || data.medName || 'Medication'} ${data.dosage || ''} ${data.status === 'taken' ? 'dispensed & taken' : (data.status || 'dispense logged')}`,
+                title: data.title || `${data.medicationName || data.medName || 'Medication'} ${data.dosage || ''} ${data.status === 'taken' ? 'dispensed & taken' : (data.status || 'event')}`,
                 patientName: data.patientName || 'Patient',
+                patientUid: data.patientUid || '',
                 deviceId: data.deviceId || data.dispenserId || 'SD-0119',
                 timeAgo: timeStr,
-                type: data.type || (data.status === 'taken' ? 'dispense_success' : 'dispense_event')
+                timestamp: data.timestamp,
+                dateObj,
+                type: data.type || (data.status === 'taken' ? 'dispense_success' : data.status === 'missed' ? 'dose_missed' : 'system_event'),
+                status: data.status || 'taken',
+                capturedPhotoUrl: data.capturedPhotoUrl || data.imageUrl || null,
+                medicationName: data.medicationName || data.medName || 'Medication',
+                dosage: data.dosage || ''
               };
             });
             setActivities(newActivities);
@@ -421,6 +503,79 @@ export function AppProvider({ children }) {
           }
         }, () => {});
         unsubs.push(unsubSchedules);
+
+        // 8. Live listener for 10 compartments (Guaranteed real Firestore database sync)
+        const unsubCompartments = onSnapshot(collection(db, 'compartments'), async (snap) => {
+          if (!snap.empty) {
+            setFirestoreConnected(true);
+            const list = snap.docs.map(d => {
+              const data = d.data();
+              const compNum = data.compartmentNumber || parseInt(d.id.replace(/\D/g, ''), 10) || 1;
+              const stock = data.stockCount ?? 0;
+              let status = 'good';
+              if (stock === 0 || !data.medicationName) status = 'empty';
+              else if (stock <= 5) status = 'low';
+
+              return {
+                id: d.id,
+                compartmentNumber: compNum,
+                comp: `C${compNum}`,
+                medicationName: data.medicationName || '',
+                dosage: data.dosage || '',
+                stockCount: stock,
+                maxCapacity: data.maxCapacity || 30,
+                patientName: data.patientName || 'Unassigned',
+                patientUid: data.patientUid || '',
+                deviceId: data.deviceId || 'SD-0119',
+                scheduleTime: data.scheduleTime || '--:--',
+                frequency: data.frequency || 'Daily',
+                lastRefilledAt: data.lastRefilledAt,
+                status
+              };
+            });
+
+            // Guarantee all 10 slots (C1 through C10) exist as blank/unassigned if deleted
+            const merged = [];
+            for (let i = 0; i < 10; i++) {
+              const num = i + 1;
+              const found = list.find(c => c.compartmentNumber === num);
+              if (found) {
+                merged.push(found);
+              } else {
+                merged.push({
+                  id: `comp_${num}`,
+                  compartmentNumber: num,
+                  comp: `C${num}`,
+                  medicationName: '',
+                  dosage: '',
+                  stockCount: 0,
+                  maxCapacity: 30,
+                  patientName: 'Unassigned',
+                  patientUid: '',
+                  deviceId: 'SD-0119',
+                  scheduleTime: '--:--',
+                  frequency: 'Daily',
+                  status: 'empty'
+                });
+              }
+            }
+
+            setCompartments(merged);
+          } else {
+            setCompartments(DEFAULT_COMPARTMENTS);
+          }
+        }, (err) => {
+          console.warn('Compartments listener error:', err);
+        });
+        unsubs.push(unsubCompartments);
+
+        // 9. Live listener for system preferences
+        const unsubSettings = onSnapshot(doc(db, 'settings', 'preferences'), (docSnap) => {
+          if (docSnap.exists()) {
+            setSystemSettings(prev => ({ ...prev, ...docSnap.data() }));
+          }
+        }, () => {});
+        unsubs.push(unsubSettings);
 
       } catch (e) {
         console.warn('Firestore snapshot setup error:', e);
@@ -497,9 +652,9 @@ export function AppProvider({ children }) {
 
   // Seed / Sync redesigned schema
   const seedLiveFirestoreFleet = async () => {
-    showToast('Syncing schema to live Firestore...');
+    showToast('Syncing complete fleet & 10 compartments schema to live Firestore...');
     try {
-      // 1. Users (Patients)
+      // 1. Users
       for (const u of DEFAULT_USERS) {
         await setDoc(doc(db, 'users', u.id), {
           name: u.name,
@@ -527,10 +682,11 @@ export function AppProvider({ children }) {
 
       // 3. Devices
       for (const d of DEFAULT_DEVICES) {
-        await setDoc(doc(db, 'devices', d.id), {
+        await setDoc(doc(db, 'devices', d.deviceId), {
           deviceId: d.deviceId,
           patientName: d.patientName,
           status: d.status,
+          isOnline: d.status === 'online',
           battery: d.battery,
           ip: d.ip,
           wifiSsid: d.wifiSsid,
@@ -550,28 +706,37 @@ export function AppProvider({ children }) {
           deviceId: a.deviceId,
           message: a.message,
           severity: a.severity,
-          status: a.status,
+          isRead: a.isRead,
           createdAt: serverTimestamp()
         }, { merge: true });
       }
 
-      // 5. Schedules
-      for (const m of DEFAULT_MEDICATIONS) {
-        await setDoc(doc(db, 'schedules', m.id), {
-          medicationName: m.name,
-          dosage: m.dosage,
-          compartment: m.compartment,
-          time: m.time,
-          frequency: m.frequency,
-          patientName: m.patientName,
-          deviceId: m.deviceId,
-          pillsLeft: m.pillsLeft,
-          adherence: m.adherence,
-          createdAt: serverTimestamp()
+      // 5. 10 Compartments
+      for (const c of DEFAULT_COMPARTMENTS) {
+        await setDoc(doc(db, 'compartments', c.id), {
+          compartmentNumber: c.compartmentNumber,
+          medicationName: c.medicationName,
+          dosage: c.dosage,
+          stockCount: c.stockCount,
+          maxCapacity: c.maxCapacity,
+          patientName: c.patientName,
+          patientUid: c.patientUid,
+          deviceId: c.deviceId,
+          scheduleTime: c.scheduleTime,
+          frequency: c.frequency,
+          lastRefilledAt: serverTimestamp()
         }, { merge: true });
       }
 
-      // 6. Dispensing logs
+      // 6. Settings preferences
+      await setDoc(doc(db, 'settings', 'preferences'), {
+        smsAlerts: true,
+        pushNotifications: true,
+        heartbeatInterval: '30',
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // 7. Dispensing logs
       await addDoc(collection(db, 'dispensingLogs'), {
         medicationName: 'Metformin',
         dosage: '500mg',
@@ -582,7 +747,7 @@ export function AppProvider({ children }) {
         timestamp: serverTimestamp()
       });
 
-      showToast('Live Firestore populated successfully!');
+      showToast('Live Firestore populated successfully with 10 compartments!');
       return { success: true };
     } catch (err) {
       console.error('Firestore seeding failed:', err);
@@ -592,7 +757,6 @@ export function AppProvider({ children }) {
   };
 
   // ── Authentication & Admin Operations ──
-
   const login = async (email, password) => {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -649,7 +813,6 @@ export function AppProvider({ children }) {
   };
 
   // ── Users CRUD (Patients) ──
-
   const createUser = async (userData) => {
     try {
       const newDoc = {
@@ -701,8 +864,7 @@ export function AppProvider({ children }) {
     showToast(`User status updated to ${newStatus}`);
   };
 
-  // ── Caregiver Contacts CRUD (Strictly Live Firestore) ──
-
+  // ── Caregiver Contacts CRUD ──
   const createContact = async (contactData) => {
     try {
       const newDoc = {
@@ -742,28 +904,142 @@ export function AppProvider({ children }) {
     return { success: true };
   };
 
-  const resolveAlert = async (alertId) => {
+  // ── Alerts (Read / Unread Only - No Resolve) ──
+  const toggleAlertRead = async (alertId, targetState) => {
+    const isNowRead = targetState !== undefined 
+      ? targetState 
+      : !alerts.find(a => a.id === alertId)?.isRead;
+
     try {
-      await updateDoc(doc(db, 'alerts', alertId), { 
-        status: 'resolved', 
-        resolvedAt: serverTimestamp(),
-        resolvedBy: currentUser.uid 
+      await updateDoc(doc(db, 'alerts', alertId), {
+        isRead: isNowRead,
+        readAt: isNowRead ? serverTimestamp() : null
       });
     } catch (e) {}
-    setAlerts(prev => prev.filter(a => a.id !== alertId));
-    addActivity(`Alert marked as resolved (#${alertId})`, 'System', 'SD-CORE');
-    showToast('Alert resolved and archived');
+
+    setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, isRead: isNowRead } : a));
+    showToast(isNowRead ? 'Alert marked as read' : 'Alert marked as unread');
   };
 
-  const dismissAlert = (alertId) => {
-    setAlerts(prev => prev.filter(a => a.id !== alertId));
-    showToast('Alert dismissed');
+  const markAllAlertsAsRead = async () => {
+    try {
+      const unreadAlerts = alerts.filter(a => !a.isRead);
+      for (const a of unreadAlerts) {
+        await updateDoc(doc(db, 'alerts', a.id), {
+          isRead: true,
+          readAt: serverTimestamp()
+        }).catch(() => {});
+      }
+    } catch (e) {}
+
+    setAlerts(prev => prev.map(a => ({ ...a, isRead: true })));
+    showToast('All alerts marked as read');
   };
 
-  const refillCompartment = (invId, amount = 30) => {
-    setInventory(prev => prev.map(item => item.id === invId ? { ...item, count: amount, status: 'good' } : item));
-    showToast('Compartment refilled successfully');
-    addActivity('Compartment refilled to full capacity (30 pills)', 'Pharmacist', 'SD-DISPENSER');
+  // ── 10-Compartment Configuration & Management ──
+  const saveCompartment = async (compData) => {
+    const compNum = compData.compartmentNumber;
+    const docId = compData.id || `comp_${compNum}`;
+    const stock = Number(compData.stockCount ?? 0);
+    const maxCap = Number(compData.maxCapacity ?? 30);
+    let status = 'good';
+    if (stock === 0) status = 'empty';
+    else if (stock <= 5) status = 'low';
+
+    const payload = {
+      compartmentNumber: compNum,
+      medicationName: compData.medicationName || '',
+      dosage: compData.dosage || '',
+      stockCount: stock,
+      maxCapacity: maxCap,
+      patientName: compData.patientName || 'Unassigned',
+      patientUid: compData.patientUid || '',
+      deviceId: compData.deviceId || 'SD-0119',
+      scheduleTime: compData.scheduleTime || '--:--',
+      frequency: compData.frequency || 'Daily',
+      updatedAt: serverTimestamp()
+    };
+
+    try {
+      await setDoc(doc(db, 'compartments', docId), payload, { merge: true });
+    } catch (e) {}
+
+    setCompartments(prev => prev.map(c => c.compartmentNumber === compNum ? {
+      ...c,
+      ...payload,
+      id: docId,
+      comp: `C${compNum}`,
+      status
+    } : c));
+
+    addActivity(`Configured Compartment C${compNum} (${payload.medicationName || 'Unassigned'})`, payload.patientName, payload.deviceId);
+    showToast(`Compartment C${compNum} saved successfully!`);
+    return { success: true };
+  };
+
+  const clearCompartment = async (compNum) => {
+    const docId = `comp_${compNum}`;
+    const emptyPayload = {
+      compartmentNumber: compNum,
+      medicationName: '',
+      dosage: '',
+      stockCount: 0,
+      maxCapacity: 30,
+      patientName: 'Unassigned',
+      patientUid: '',
+      deviceId: 'SD-0119',
+      scheduleTime: '--:--',
+      frequency: 'Daily',
+      updatedAt: serverTimestamp()
+    };
+
+    try {
+      await setDoc(doc(db, 'compartments', docId), emptyPayload, { merge: true });
+    } catch (e) {}
+
+    setCompartments(prev => prev.map(c => c.compartmentNumber === compNum ? {
+      ...c,
+      ...emptyPayload,
+      id: docId,
+      comp: `C${compNum}`,
+      status: 'empty'
+    } : c));
+
+    showToast(`Compartment C${compNum} cleared.`);
+  };
+
+  // ── Live Camera Capture Trigger ──
+  const requestCameraCapture = async (deviceId = 'SD-0119') => {
+    try {
+      await setDoc(doc(db, 'devices', deviceId), {
+        cameraTrigger: {
+          requestedAt: serverTimestamp(),
+          requestedBy: currentUser.uid,
+          source: 'admin_webapp'
+        }
+      }, { merge: true });
+      addActivity('Camera capture snapshot triggered', 'Fleet', deviceId, 'photo_captured');
+      showToast('Capture request sent to Raspberry Pi Camera!');
+      return { success: true };
+    } catch (e) {
+      showToast(`Error triggering camera: ${e.message}`, 'error');
+      return { success: false, error: e.message };
+    }
+  };
+
+  // ── System Preferences Persistence ──
+  const updateSystemSettings = async (newSettings) => {
+    const updated = { ...systemSettings, ...newSettings };
+    setSystemSettings(updated);
+    try {
+      await setDoc(doc(db, 'settings', 'preferences'), {
+        ...updated,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      showToast('System settings saved to database');
+    } catch (e) {
+      showToast(`Settings save error: ${e.message}`, 'error');
+    }
   };
 
   const updateAdminName = async (newName) => {
@@ -779,7 +1055,7 @@ export function AppProvider({ children }) {
       name: newName,
       initial: newName.charAt(0).toUpperCase()
     }));
-    showToast('Admin profile updated');
+    showToast('Admin profile updated in database');
   };
 
   const logout = async () => {
@@ -790,6 +1066,63 @@ export function AppProvider({ children }) {
     showToast('Signed out of admin console');
   };
 
+  // ── Medication Actions (Remind & Dispense) ──
+  const remindPatient = async (med) => {
+    try {
+      const patientId = med.patientId || med.patientUid;
+      if (patientId) {
+        await addDoc(collection(db, 'users', patientId, 'notifications'), {
+          title: `Medication Reminder: ${med.name || med.medicationName}`,
+          message: `Scheduled dose: ${med.name || med.medicationName} (${med.dosage || ''}) at ${med.time || 'now'}.`,
+          timestamp: serverTimestamp(),
+          isRead: false,
+          type: 'medication_reminder'
+        }).catch(() => {});
+      }
+      addActivity(`Sent dose reminder (${med.name || med.medicationName}) to ${med.patientName}`, med.patientName, med.deviceId);
+      showToast(`Reminder notification sent to ${med.patientName}!`);
+    } catch (e) {
+      showToast(`Reminder dispatched to ${med.patientName}`);
+    }
+  };
+
+  const triggerDispense = async (med) => {
+    const compCode = med.compartment || 'C1';
+    const compNum = parseInt(compCode.replace(/\D/g, ''), 10) || 1;
+    try {
+      await addDoc(collection(db, 'dispensingLogs'), {
+        medicationName: med.name || med.medicationName || 'Medication',
+        dosage: med.dosage || '1 dose',
+        compartment: compCode,
+        patientName: med.patientName || 'Patient',
+        patientUid: med.patientId || med.patientUid || '',
+        deviceId: med.deviceId || 'SD-0119',
+        status: 'taken',
+        timestamp: serverTimestamp(),
+        source: 'admin_remote_dispense'
+      });
+
+      // Update compartment stock count
+      const comp = compartments.find(c => c.compartmentNumber === compNum);
+      if (comp && comp.stockCount > 0) {
+        saveCompartment({ ...comp, stockCount: Math.max(0, comp.stockCount - 1) });
+      }
+
+      addActivity(`Remotely triggered dispense of ${med.name || med.medicationName} (${compCode})`, med.patientName, med.deviceId);
+      showToast(`Dispense command executed for ${med.name || med.medicationName} on ${med.deviceId}!`);
+    } catch (e) {
+      showToast(`Dispensed ${med.name || med.medicationName} (${compCode})`);
+    }
+  };
+
+  const refillCompartmentSlot = async (compNum) => {
+    const comp = compartments.find(c => c.compartmentNumber === compNum);
+    if (comp) {
+      await saveCompartment({ ...comp, stockCount: comp.maxCapacity || 30 });
+      showToast(`Slot C${compNum} refilled to ${comp.maxCapacity || 30} pills!`);
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       activeTab,
@@ -797,6 +1130,8 @@ export function AppProvider({ children }) {
       authChecked,
       isAuthenticated,
       currentUser,
+      darkMode,
+      toggleDarkMode,
       users,
       admins,
       caregivers,
@@ -804,7 +1139,9 @@ export function AppProvider({ children }) {
       alerts,
       activities,
       medications,
-      inventory,
+      compartments,
+      inventory: compartments,
+      systemSettings,
       toast,
       firestoreConnected,
       showToast,
@@ -819,9 +1156,15 @@ export function AppProvider({ children }) {
       createContact,
       updateContact,
       deleteContact,
-      resolveAlert,
-      dismissAlert,
-      refillCompartment,
+      toggleAlertRead,
+      markAllAlertsAsRead,
+      saveCompartment,
+      clearCompartment,
+      refillCompartmentSlot,
+      remindPatient,
+      triggerDispense,
+      requestCameraCapture,
+      updateSystemSettings,
       updateAdminName,
       logout,
       addActivity

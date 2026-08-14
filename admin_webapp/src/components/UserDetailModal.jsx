@@ -1,8 +1,10 @@
 import React from 'react';
 import { StatusBadge } from './StatusBadge';
+import { useApp } from '../context/AppContext';
 import { X, User, Phone, Mail, Smartphone, Shield, Calendar, Key, AlertCircle } from 'lucide-react';
 
 export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword }) {
+  const { darkMode } = useApp() || {};
   if (!user) return null;
 
   return (
@@ -10,8 +12,8 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
-        backdropFilter: 'blur(3px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -22,13 +24,13 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
     >
       <div
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '18px',
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: '22px',
           padding: '28px',
           maxWidth: '520px',
           width: '100%',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
-          border: '1px solid #E5E7EB',
+          boxShadow: 'var(--shadow-modal)',
+          border: '1px solid var(--border-light)',
           maxHeight: '90vh',
           overflowY: 'auto'
         }}
@@ -42,8 +44,8 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
                 width: '46px',
                 height: '46px',
                 borderRadius: '12px',
-                backgroundColor: '#ECFDF5',
-                color: '#059669',
+                backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5',
+                color: darkMode ? '#34D399' : '#059669',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -54,10 +56,10 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
               {(user.name || 'U').charAt(0).toUpperCase()}
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#111827', margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
                 {user.name}
               </h2>
-              <div style={{ fontSize: '12.5px', color: '#6B7280', marginTop: '2px' }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-subtle)', marginTop: '2px' }}>
                 {user.role === 'patient' ? 'Patient Profile' : user.role === 'caregiver' ? 'Caregiver Account' : 'Administrator'}
               </div>
             </div>
@@ -67,7 +69,7 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
             style={{
               background: 'none',
               border: 'none',
-              color: '#9CA3AF',
+              color: 'var(--text-faint)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '8px'
@@ -79,38 +81,38 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
 
         {/* Info Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '24px' }}>
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
             <StatusBadge status={user.status || 'active'} />
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>Dispenser ID</div>
-            <div style={{ fontSize: '13.5px', fontWeight: '600', color: '#111827', fontFamily: 'monospace' }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Dispenser ID</div>
+            <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-main)', fontFamily: 'monospace' }}>
               {user.deviceId || 'Unassigned'}
             </div>
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>Email Address</div>
-            <div style={{ fontSize: '13px', color: '#374151', wordBreak: 'break-all' }}>{user.email || '—'}</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Email Address</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-main)', wordBreak: 'break-all' }}>{user.email || '—'}</div>
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>Phone Number</div>
-            <div style={{ fontSize: '13px', color: '#374151' }}>{user.phone || '—'}</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Phone Number</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-main)' }}>{user.phone || '—'}</div>
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>7-Day Adherence</div>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>7-Day Adherence</div>
             <div style={{ fontSize: '16px', fontWeight: '800', color: (user.adherencePercent || 0) >= 80 ? '#059669' : '#D97706' }}>
               {user.adherencePercent != null ? `${user.adherencePercent}%` : 'N/A'}
             </div>
           </div>
 
-          <div style={{ padding: '12px', backgroundColor: '#F9FBFA', borderRadius: '10px', border: '1px solid #EEF3F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: '4px' }}>Active Schedules</div>
-            <div style={{ fontSize: '16px', fontWeight: '800', color: '#111827' }}>
+          <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Active Schedules</div>
+            <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-main)' }}>
               {user.schedulesCount != null ? `${user.schedulesCount} schedules` : '—'}
             </div>
           </div>
@@ -118,24 +120,24 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
 
         {/* Emergency contact info if present */}
         {user.emergencyContact && (
-          <div style={{ padding: '12px', backgroundColor: '#FEF3C7', borderRadius: '10px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <AlertCircle size={18} style={{ color: '#B45309', flexShrink: 0 }} />
-            <div style={{ fontSize: '12.5px', color: '#92400E' }}>
+          <div style={{ padding: '12px', backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.18)' : '#FEF3C7', border: darkMode ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid #FDE68A', borderRadius: '10px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertCircle size={18} style={{ color: darkMode ? '#FBBF24' : '#B45309', flexShrink: 0 }} />
+            <div style={{ fontSize: '12.5px', color: darkMode ? '#FBBF24' : '#92400E' }}>
               <strong>Emergency contact:</strong> {user.emergencyContact}
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid #F3F4F6', paddingTop: '18px' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '18px' }}>
           <button
             onClick={() => onResetPassword(user.email)}
             style={{
               padding: '9px 14px',
               borderRadius: '8px',
-              border: '1px solid #E5E7EB',
-              backgroundColor: '#FFFFFF',
-              color: '#4B5563',
+              border: '1px solid var(--border-input)',
+              backgroundColor: 'transparent',
+              color: 'var(--text-muted)',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',

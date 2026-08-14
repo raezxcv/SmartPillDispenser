@@ -53,7 +53,7 @@ function MainLayout() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#F6FAF7' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-main)', transition: 'background-color 0.25s ease' }}>
       {/* Sidebar with official app logo */}
       <Sidebar />
 

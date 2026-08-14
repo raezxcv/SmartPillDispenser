@@ -47,23 +47,24 @@ export function LoginView() {
       style={{
         minHeight: '100vh',
         width: '100vw',
-        backgroundColor: '#F6FAF7',
+        backgroundColor: 'var(--bg-app)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        transition: 'background-color 0.25s ease'
       }}
     >
       <div
         style={{
           width: '100%',
           maxWidth: '420px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '24px',
           padding: '40px 32px',
-          boxShadow: '0 12px 36px rgba(16, 185, 129, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03)',
-          border: '1px solid #E6EFE9',
+          boxShadow: 'var(--shadow-modal)',
+          border: '1px solid var(--border-light)',
           boxSizing: 'border-box'
         }}
       >
@@ -81,10 +82,10 @@ export function LoginView() {
               marginBottom: '12px'
             }}
           />
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', margin: '0 0 4px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', margin: '0 0 4px' }}>
             SmartDose
           </h1>
-          <p style={{ fontSize: '13px', color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-subtle)', margin: 0 }}>
             Administrator Login Portal
           </p>
         </div>
@@ -110,11 +111,11 @@ export function LoginView() {
         {/* Login Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: '#4B5563', textTransform: 'uppercase', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
               Administrator Email
             </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#9CA3AF' }} />
+              <Mail size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-faint)' }} />
               <input
                 type="email"
                 required
@@ -126,7 +127,9 @@ export function LoginView() {
                   height: '42px',
                   padding: '0 12px 0 38px',
                   borderRadius: '10px',
-                  border: '1px solid #D1D5DB',
+                  border: '1px solid var(--border-input)',
+                  backgroundColor: 'var(--bg-input)',
+                  color: 'var(--text-main)',
                   fontSize: '13.5px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -137,7 +140,7 @@ export function LoginView() {
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label style={{ fontSize: '11.5px', fontWeight: '700', color: '#4B5563', textTransform: 'uppercase' }}>
+              <label style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 Password
               </label>
               <button
@@ -149,7 +152,7 @@ export function LoginView() {
               </button>
             </div>
             <div style={{ position: 'relative' }}>
-              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: '#9CA3AF' }} />
+              <Lock size={16} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-faint)' }} />
               <input
                 type="password"
                 required
@@ -161,7 +164,9 @@ export function LoginView() {
                   height: '42px',
                   padding: '0 12px 0 38px',
                   borderRadius: '10px',
-                  border: '1px solid #D1D5DB',
+                  border: '1px solid var(--border-input)',
+                  backgroundColor: 'var(--bg-input)',
+                  color: 'var(--text-main)',
                   fontSize: '13.5px',
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -196,7 +201,7 @@ export function LoginView() {
           </button>
         </form>
 
-        <div style={{ marginTop: '26px', textAlign: 'center', fontSize: '11.5px', color: '#9CA3AF', lineHeight: '1.4' }}>
+        <div style={{ marginTop: '26px', textAlign: 'center', fontSize: '11.5px', color: 'var(--text-faint)', lineHeight: '1.4' }}>
           Authorized administrator access only • All activity is logged.<br />
           Admin provisioning is managed inside the console settings.
         </div>

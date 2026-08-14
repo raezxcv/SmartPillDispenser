@@ -2,343 +2,376 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Camera,
+  CameraOff,
+  VideoOff,
+  Wifi,
   RefreshCw,
+  Clock,
+  ScanFace,
   CheckCircle,
   XCircle,
+  AlertCircle,
   Activity,
-  Wifi,
-  WifiOff,
-  Image as ImageIcon,
-  Clock
+  Bell,
+  Pill,
+  Image as ImageIcon
 } from 'lucide-react';
 
 export function LiveFeedView() {
-  const { devices, activities, showToast } = useApp();
+  const { devices, activities, requestCameraCapture, showToast, darkMode } = useApp();
+  const [selectedDeviceId, setSelectedDeviceId] = useState(devices[0]?.deviceId || 'SD-0119');
+  const [isCapturing, setIsCapturing] = useState(false);
 
-  const [selectedDeviceId, setSelectedDeviceId] = useState('SD-0119');
-  const [streamKey, setStreamKey] = useState(0);
+  const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId) || devices[0] || {};
+  const isOnline = selectedDevice.status === 'online' || selectedDevice.isOnline === true;
 
-  const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId) || devices[0] || {
-    deviceId: 'SD-0119',
-    patientName: 'Amara Reyes',
-    status: 'online',
-    battery: 98,
-    ip: '192.168.1.119'
+  const handleCapture = async () => {
+    setIsCapturing(true);
+    await requestCameraCapture(selectedDeviceId);
+    setTimeout(() => setIsCapturing(false), 1200);
   };
 
-  const isOnline = selectedDevice.status === 'online';
+  const getLogDetails = (log) => {
+    const type = (log.type || '').toLowerCase();
+    const status = (log.status || '').toLowerCase();
 
-  const getLogBadge = (log) => {
-    const type = log.type || '';
-    const status = log.status || '';
-
+    if (type === 'emergency' || status === 'emergency' || type === 'emergency_request') {
+      return {
+        bg: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2',
+        badgeBg: darkMode ? 'rgba(239, 68, 68, 0.25)' : '#FEE2E2',
+        badgeText: '#EF4444',
+        icon: Bell,
+        title: 'Emergency Request',
+        label: 'Emergency'
+      };
+    }
     if (type === 'patient_detected' || status === 'detected' || type === 'face_verified') {
       return {
-        bg: '#DBEAFE',
-        text: '#1D4ED8',
-        icon: Activity,
-        label: 'Patient Detected'
+        bg: darkMode ? 'rgba(59, 130, 246, 0.2)' : '#DBEAFE',
+        badgeBg: darkMode ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
+        badgeText: '#2563EB',
+        icon: ScanFace,
+        title: log.title || 'Patient Detected',
+        label: 'Detected'
       };
     }
     if (type === 'photo_captured' || status === 'captured') {
       return {
-        bg: '#E0E7FF',
-        text: '#4338CA',
+        bg: darkMode ? 'rgba(99, 102, 241, 0.2)' : '#E0E7FF',
+        badgeBg: darkMode ? 'rgba(99, 102, 241, 0.25)' : '#E0E7FF',
+        badgeText: '#4338CA',
         icon: Camera,
-        label: 'Captured Image'
+        title: log.title || 'Snapshot Captured',
+        label: 'Snapshot'
       };
     }
     if (status === 'missed' || type === 'dose_missed') {
       return {
-        bg: '#FEE2E2',
-        text: '#EF4444',
+        bg: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#FEE2E2',
+        badgeBg: darkMode ? 'rgba(239, 68, 68, 0.25)' : '#FEE2E2',
+        badgeText: '#EF4444',
         icon: XCircle,
-        label: 'Missed Dose'
+        title: log.title || 'Missed Medication',
+        label: 'Missed'
       };
     }
     return {
-      bg: '#D1FAE5',
-      text: '#059669',
+      bg: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5',
+      badgeBg: darkMode ? 'rgba(16, 185, 129, 0.25)' : '#D1FAE5',
+      badgeText: '#059669',
       icon: CheckCircle,
-      label: 'Medicine Taken'
+      title: log.title || 'Medicine Taken',
+      label: 'Taken'
     };
   };
 
+  // Format timestamp nicely (e.g. 07:56 AM)
+  const formatTime = (log) => {
+    if (log.dateObj) {
+      return log.dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+    if (log.timeAgo && (log.timeAgo.includes('AM') || log.timeAgo.includes('PM'))) {
+      return log.timeAgo;
+    }
+    return log.timeAgo || '08:00 AM';
+  };
+
   return (
-    <div className="animate-fade-in content-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="animate-fade-in content-container" style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
       
       {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', margin: 0 }}>
-            Live Camera Feed
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+            Live Camera Stream
           </h1>
-          <p style={{ fontSize: '13.5px', color: '#6B7280', margin: '3px 0 0' }}>
-            Real-time Raspberry Pi camera stream and live dispensing activity.
+          <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)' }}>
+            Real-time Raspberry Pi camera connection and dispensing event verification.
           </p>
         </div>
 
-        {/* Device Picker & Reconnect */}
+        {/* Device Switcher */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-subtle)' }}>Dispenser:</span>
           <select
             value={selectedDeviceId}
             onChange={(e) => setSelectedDeviceId(e.target.value)}
             style={{
               height: '40px',
-              padding: '0 14px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E6EFE9',
-              borderRadius: '12px',
-              fontSize: '13.5px',
+              padding: '0 12px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-light)',
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              fontSize: '13px',
               fontWeight: '700',
-              color: '#111827',
               outline: 'none',
               cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              boxShadow: 'var(--shadow-card)'
             }}
           >
             {devices.map((d) => (
               <option key={d.deviceId} value={d.deviceId}>
-                {d.deviceId} — {d.patientName} ({d.status === 'online' ? 'Online' : 'Standby'})
+                {d.deviceId} — {d.patientName || 'Fleet'} ({d.status || 'offline'})
               </option>
             ))}
           </select>
+        </div>
+      </div>
 
-          <button
-            onClick={() => {
-              setStreamKey(prev => prev + 1);
-              showToast('Reconnecting stream...');
-            }}
-            title="Reconnect stream"
+      {/* ── CAMERA VIEWPORT (Soft Light BG in Light Mode / Dark in Dark Mode, Matching Screenshot) ── */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '420px',
+          borderRadius: '28px',
+          backgroundColor: darkMode ? '#181F2E' : '#DFE6EE',
+          background: darkMode
+            ? 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)'
+            : 'linear-gradient(180deg, #E2E8F0 0%, #DCE4ED 100%)',
+          border: '1px solid var(--border-light)',
+          overflow: 'hidden',
+          boxShadow: darkMode ? '0 12px 32px rgba(0, 0, 0, 0.4)' : '0 8px 24px rgba(0, 0, 0, 0.04)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '24px',
+          boxSizing: 'border-box',
+          transition: 'background 0.25s ease'
+        }}
+      >
+        {/* Top Badges */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+          <div
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              border: '1px solid #E6EFE9',
-              backgroundColor: '#FFFFFF',
-              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--border-light)',
+              padding: '6px 14px',
+              borderRadius: '9999px'
+            }}
+          >
+            <div className="pulse-live-dot" />
+            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#10B981', letterSpacing: '0.04em' }}>
+              {isOnline ? 'CAMERA ACTIVE' : 'CAMERA STANDBY'}
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid var(--border-light)',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              fontSize: '11.5px',
+              color: 'var(--text-main)',
+              fontWeight: '600'
+            }}
+          >
+            <Wifi size={13} style={{ color: '#10B981' }} />
+            <span>Raspberry Pi · Online</span>
+          </div>
+        </div>
+
+        {/* Center Standby Icon & Message (Matching Screenshot exactly) */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: '12px',
+            zIndex: 5
+          }}
+        >
+          {/* Circular Camera-Off Badge */}
+          <div
+            style={{
+              width: '84px',
+              height: '84px',
+              borderRadius: '50%',
+              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(148, 163, 184, 0.35)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              color: darkMode ? '#94A3B8' : '#475569',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)'
             }}
           >
-            <RefreshCw size={17} />
-          </button>
-        </div>
-      </div>
-
-      {/* ── Clean Live Video Stream Block ── */}
-      <div
-        style={{
-          height: '320px',
-          backgroundColor: '#0F172A',
-          borderRadius: '24px',
-          border: '1.5px solid #E2E8F0',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.18)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between'
-        }}
-      >
-        {/* Top Overlay Bar */}
-        <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-          {/* Live pulsing badge */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: isOnline ? 'rgba(239, 68, 68, 0.25)' : 'rgba(100, 116, 139, 0.25)',
-              color: isOnline ? '#EF4444' : '#94A3B8',
-              fontSize: '11.5px',
-              fontWeight: '800',
-              padding: '4px 10px',
-              borderRadius: '9999px',
-              border: isOnline ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(148, 163, 184, 0.4)',
-              backdropFilter: 'blur(4px)'
-            }}
-          >
-            <span
-              style={{
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: isOnline ? '#EF4444' : '#94A3B8',
-                animation: isOnline ? 'pulse 1.5s infinite' : 'none'
-              }}
-            />
-            {isOnline ? 'LIVE STREAM' : 'STANDBY'}
+            <VideoOff size={38} strokeWidth={2} />
           </div>
 
-          {/* Top-right Status Pill */}
-          <div
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+              Camera Standby
+            </h3>
+            <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)', margin: 0, maxWidth: '340px', lineHeight: '1.4' }}>
+              Waiting for camera connection or dispensing event...
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Actions: Take Photo / Capture CTA */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10 }}>
+          <button
+            onClick={handleCapture}
+            disabled={isCapturing}
             style={{
-              display: 'inline-flex',
+              display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '5px 12px',
-              borderRadius: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              color: '#0F172A',
-              fontSize: '11.5px',
+              gap: '8px',
+              padding: '11px 22px',
+              borderRadius: '14px',
+              border: 'none',
+              backgroundColor: '#10B981',
+              color: '#FFFFFF',
+              fontSize: '13.5px',
               fontWeight: '700',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#059669')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#10B981')}
+          >
+            <Camera size={18} strokeWidth={2.4} className={isCapturing ? 'animate-pulse' : ''} />
+            <span>{isCapturing ? 'Capturing...' : 'Take Photo (Capture)'}</span>
+          </button>
+
+          <div
+            style={{
+              fontSize: '12px',
+              color: 'var(--text-subtle)',
+              backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backdropFilter: 'blur(6px)',
+              border: '1px solid var(--border-light)'
             }}
           >
-            {isOnline ? <Wifi size={13} color="#00C882" strokeWidth={2.4} /> : <WifiOff size={13} color="#6B7280" />}
-            {isOnline ? 'Raspberry Pi · Online' : 'Standby'}
+            Unit: <strong>{selectedDeviceId}</strong> ({selectedDevice.patientName || 'Fleet'})
+          </div>
+        </div>
+      </div>
+
+      {/* ── Live Detection & Activity Logs (Matching Screenshot) ── */}
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 2px', letterSpacing: '-0.01em' }}>
+              Live Detection & Activity Logs
+            </h2>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-subtle)', margin: 0 }}>
+              Patient detection, medicine intake & captures
+            </p>
+          </div>
+
+          <div style={{ color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Activity size={22} strokeWidth={2.4} />
           </div>
         </div>
 
-        {/* Viewfinder Center Canvas */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#64748B',
-            fontSize: '14px',
-            fontWeight: '600'
-          }}
-        >
-          {isOnline ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Camera size={40} color="#10B981" strokeWidth={1.6} />
-              <span style={{ color: '#E2E8F0', fontSize: '13px' }}>MJPEG Stream Active • {selectedDevice.deviceId}</span>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <WifiOff size={36} color="#64748B" />
-              <span style={{ color: '#94A3B8', fontSize: '13px' }}>Camera in Standby Mode</span>
-            </div>
-          )}
-        </div>
+        {/* Activity Cards List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {activities.slice(0, 5).map((log, idx) => {
+            const details = getLogDetails(log);
+            const Icon = details.icon;
+            const timeFormatted = formatTime(log);
 
-        {/* Bottom Status Info */}
-        <div
-          style={{
-            padding: '12px 20px',
-            backgroundColor: 'rgba(15, 23, 42, 0.85)',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '12px',
-            color: '#94A3B8'
-          }}
-        >
-          <span>{selectedDevice.patientName} • {selectedDevice.deviceId}</span>
-          <span style={{ color: '#10B981', fontWeight: '600' }}>Stream Synced</span>
-        </div>
-      </div>
-
-      {/* ── Activity Logs Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#111827', margin: 0, letterSpacing: '-0.01em' }}>
-            Live Detection & Activity Logs
-          </h2>
-          <p style={{ fontSize: '13px', color: '#6B7280', margin: '2px 0 0' }}>
-            Patient detection, medicine intake & camera events in real-time.
-          </p>
-        </div>
-        <Activity size={22} color="#00A36C" />
-      </div>
-
-      {/* ── Activity Logs List (Clean Card UI) ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {activities.map((act) => {
-          const badge = getLogBadge(act);
-          const Icon = badge.icon;
-
-          return (
-            <div
-              key={act.id}
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: '20px',
-                padding: '16px 20px',
-                border: '1px solid #E6EFE9',
-                boxShadow: 'var(--shadow-card)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '16px'
-              }}
-            >
-              {/* Left Circle Icon */}
+            return (
               <div
+                key={log.id || idx}
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  backgroundColor: badge.bg,
-                  color: badge.text,
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '20px',
+                  padding: '16px 20px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  boxShadow: 'var(--shadow-card)',
+                  transition: 'background-color 0.15s ease'
                 }}
               >
-                <Icon size={20} strokeWidth={2.3} />
-              </div>
-
-              {/* Main Log Info */}
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#111827' }}>
-                    {act.title}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#6B7280', fontWeight: '500' }}>
-                    {act.timeAgo || 'Just now'}
-                  </div>
-                </div>
-
-                <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '8px' }}>
-                  {act.patientName} • Device: <code>{act.deviceId || 'SD-0119'}</code>
-                </div>
-
-                {/* Badge tags */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  {/* Soft Pastel Circular Icon Badge */}
+                  <div
                     style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      backgroundColor: badge.bg,
-                      color: badge.text,
-                      fontSize: '11px',
-                      fontWeight: '700'
+                      width: '46px',
+                      height: '46px',
+                      borderRadius: '50%',
+                      backgroundColor: details.bg,
+                      color: details.badgeText,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
                     }}
                   >
-                    {badge.label}
-                  </span>
+                    <Icon size={20} strokeWidth={2.3} />
+                  </div>
 
-                  {(act.type === 'photo_captured' || act.type === 'face_verified') && (
-                    <span
-                      style={{
-                        padding: '3px 9px',
-                        borderRadius: '12px',
-                        backgroundColor: '#E0E7FF',
-                        color: '#4338CA',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <ImageIcon size={12} /> Photo Attached
-                    </span>
-                  )}
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-main)', lineHeight: '1.2' }}>
+                      {details.title}
+                    </div>
+
+                    <div style={{ marginTop: '5px' }}>
+                      <span
+                        style={{
+                          display: 'inline-block',
+                          padding: '2px 10px',
+                          borderRadius: '8px',
+                          backgroundColor: details.badgeBg,
+                          color: details.badgeText,
+                          fontSize: '11.5px',
+                          fontWeight: '800',
+                          letterSpacing: '0.02em'
+                        }}
+                      >
+                        {details.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '13px', color: 'var(--text-subtle)', fontWeight: '600' }}>
+                  {timeFormatted}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
     </div>

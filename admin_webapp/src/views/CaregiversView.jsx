@@ -1,17 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmModal } from '../components/ConfirmModal';
-import { HeartHandshake, UserPlus, Phone, Mail, Edit2, Trash2, X, Search } from 'lucide-react';
+import {
+  HeartHandshake,
+  UserPlus,
+  Phone,
+  Mail,
+  Edit2,
+  Trash2,
+  X,
+  Search,
+  MoreVertical
+} from 'lucide-react';
 
 export function CaregiversView() {
-  const { caregivers, users, createContact, updateContact, deleteContact, showToast } = useApp();
+  const { caregivers, users, createContact, updateContact, deleteContact, showToast, darkMode } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  const menuRef = useRef(null);
+
+  // Close 3-dot menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setActiveMenuId(null);
+      }
+    };
+    if (activeMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [activeMenuId]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,6 +74,7 @@ export function CaregiversView() {
   };
 
   const handleOpenEdit = (contact) => {
+    setActiveMenuId(null);
     setEditingContact(contact);
     setFormData({
       name: contact.name || '',
@@ -85,10 +111,10 @@ export function CaregiversView() {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
             Caregiver Contacts
           </h1>
-          <p style={{ fontSize: '13.5px', color: '#6B7280' }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)' }}>
             Verified family members, trusted caregivers and emergency dispatch recipients.
           </p>
         </div>
@@ -124,8 +150,8 @@ export function CaregiversView() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E6EFE9',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-light)',
             borderRadius: '12px',
             padding: '0 14px',
             height: '42px',
@@ -133,7 +159,7 @@ export function CaregiversView() {
             maxWidth: '380px'
           }}
         >
-          <Search size={16} style={{ color: '#9CA3AF' }} />
+          <Search size={16} style={{ color: 'var(--text-faint)' }} />
           <input
             type="text"
             placeholder="Search by contact name, patient, or phone..."
@@ -143,30 +169,38 @@ export function CaregiversView() {
               border: 'none',
               outline: 'none',
               fontSize: '13.5px',
-              color: '#111827',
+              color: 'var(--text-main)',
               width: '100%',
               backgroundColor: 'transparent'
             }}
           />
         </div>
 
-        <div style={{ fontSize: '13px', color: '#6B7280', fontWeight: '500' }}>
+        <div style={{ fontSize: '13px', color: 'var(--text-subtle)', fontWeight: '500' }}>
           Showing <strong>{filteredCaregivers.length}</strong> caregiver contacts
         </div>
       </div>
 
-      {/* ── Caregivers Table ── */}
-      <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E6EFE9', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
+      {/* ── Caregivers Table (overflow: visible to avoid clipping dropdowns) ── */}
+      <div
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '18px',
+          boxShadow: 'var(--shadow-card)',
+          position: 'relative'
+        }}
+      >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #E6EFE9', backgroundColor: '#F9FBFA' }}>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Caregiver</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Assigned Patient</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Relationship</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Phone Number</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>Pairing Status</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase' }}>SMS Dispatch</th>
-              <th style={{ padding: '14px 20px', fontWeight: '700', color: '#6B7280', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+            <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'var(--bg-subtle)' }}>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase', borderTopLeftRadius: '18px' }}>Caregiver</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Assigned Patient</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Relationship</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Phone Number</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Pairing Status</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>SMS Dispatch</th>
+              <th style={{ padding: '14px 20px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right', borderTopRightRadius: '18px' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -174,60 +208,151 @@ export function CaregiversView() {
               <tr>
                 <td colSpan={7} style={{ padding: '48px 24px', textAlign: 'center' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <HeartHandshake size={36} color="#9CA3AF" style={{ marginBottom: '10px' }} />
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: '#111827' }}>No caregiver contacts yet</div>
-                    <div style={{ fontSize: '13px', color: '#6B7280', marginTop: '4px' }}>
+                    <HeartHandshake size={36} color="var(--text-faint)" style={{ marginBottom: '10px' }} />
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)' }}>No caregiver contacts yet</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-subtle)', marginTop: '4px' }}>
                       Click <strong>+ Add Caregiver Contact</strong> to register trusted family members.
                     </div>
                   </div>
                 </td>
               </tr>
             ) : (
-              filteredCaregivers.map((cg, idx) => (
-                <tr key={cg.id} style={{ borderBottom: idx === filteredCaregivers.length - 1 ? 'none' : '1px solid #F0F5F2' }}>
-                  <td style={{ padding: '16px 20px' }}>
-                    <div style={{ fontWeight: '700', color: '#111827' }}>{cg.name}</div>
-                    <div style={{ fontSize: '12px', color: '#6B7280' }}>{cg.email || '—'}</div>
-                  </td>
-                  <td style={{ padding: '16px 20px', fontWeight: '700', color: '#111827' }}>
-                    {cg.patientName}
-                  </td>
-                  <td style={{ padding: '16px 20px', color: '#4B5563' }}>
-                    {cg.relationship}
-                  </td>
-                  <td style={{ padding: '16px 20px', color: '#374151', fontFamily: 'monospace' }}>
-                    {cg.phone}
-                  </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <StatusBadge status={cg.pairingStatus === 'paired' ? 'active' : 'warning'} />
-                  </td>
-                  <td style={{ padding: '16px 20px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: cg.smsAlerts ? '#059669' : '#9CA3AF' }}>
-                      {cg.smsAlerts ? '✓ Enabled' : 'Disabled'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <button
-                        onClick={() => handleOpenEdit(cg)}
-                        title="Edit Contact"
-                        style={{ padding: '6px', border: 'none', background: 'none', color: '#6B7280', cursor: 'pointer', borderRadius: '6px' }}
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(cg)}
-                        title="Delete Contact"
-                        style={{ padding: '6px', border: 'none', background: 'none', color: '#9CA3AF', cursor: 'pointer', borderRadius: '6px' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = '#DC2626'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF'; }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              filteredCaregivers.map((cg, idx) => {
+                const isMenuOpen = activeMenuId === cg.id;
+                const isNearBottom = idx >= filteredCaregivers.length - 2;
+
+                return (
+                  <tr
+                    key={cg.id}
+                    style={{
+                      borderBottom: idx === filteredCaregivers.length - 1 ? 'none' : '1px solid var(--border-light)',
+                      position: isMenuOpen ? 'relative' : 'static',
+                      zIndex: isMenuOpen ? 50 : 1
+                    }}
+                  >
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ fontWeight: '700', color: 'var(--text-main)' }}>{cg.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>{cg.email || '—'}</div>
+                    </td>
+                    <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-main)' }}>
+                      {cg.patientName}
+                    </td>
+                    <td style={{ padding: '16px 20px', color: 'var(--text-muted)' }}>
+                      {cg.relationship}
+                    </td>
+                    <td style={{ padding: '16px 20px', color: 'var(--text-main)', fontFamily: 'monospace' }}>
+                      {cg.phone}
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <StatusBadge status={cg.pairingStatus === 'paired' ? 'active' : 'warning'} />
+                    </td>
+                    <td style={{ padding: '16px 20px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: cg.smsAlerts ? '#059669' : 'var(--text-faint)' }}>
+                        {cg.smsAlerts ? '✓ Enabled' : 'Disabled'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'right', position: 'relative', zIndex: isMenuOpen ? 100 : 'auto' }}>
+                      <div style={{ display: 'inline-block', position: 'relative' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(isMenuOpen ? null : cg.id);
+                          }}
+                          title="More options"
+                          style={{
+                            padding: '6px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-light)',
+                            backgroundColor: isMenuOpen ? 'var(--bg-hover)' : 'transparent',
+                            color: 'var(--text-main)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+
+                        {/* 3-Dot Dropdown Popover (Smart Upward/Downward Positioning) */}
+                        {isMenuOpen && (
+                          <div
+                            ref={menuRef}
+                            style={{
+                              position: 'absolute',
+                              ...(isNearBottom ? { bottom: '38px', top: 'auto' } : { top: '38px', bottom: 'auto' }),
+                              right: 0,
+                              width: '160px',
+                              backgroundColor: 'var(--bg-card)',
+                              border: '1px solid var(--border-light)',
+                              borderRadius: '12px',
+                              boxShadow: '0 12px 28px rgba(0, 0, 0, 0.28), 0 4px 10px rgba(0, 0, 0, 0.15)',
+                              zIndex: 9999,
+                              overflow: 'hidden',
+                              padding: '4px',
+                              animation: 'scaleUpModal 0.15s ease-out forwards'
+                            }}
+                          >
+                            <button
+                              onClick={() => handleOpenEdit(cg)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '8px 10px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                backgroundColor: 'transparent',
+                                color: 'var(--text-main)',
+                                fontSize: '12.5px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'background 0.15s'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            >
+                              <Edit2 size={14} color="#059669" />
+                              <span>Edit Contact</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setDeleteTarget(cg);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                width: '100%',
+                                padding: '8px 10px',
+                                border: 'none',
+                                borderRadius: '8px',
+                                backgroundColor: 'transparent',
+                                color: '#DC2626',
+                                fontSize: '12.5px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                transition: 'background 0.15s'
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FEE2E2')}
+                              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                            >
+                              <Trash2 size={14} color="#DC2626" />
+                              <span>Delete Contact</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -240,26 +365,37 @@ export function CaregiversView() {
             <div className="modal-dialog" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5',
+                      color: darkMode ? '#34D399' : '#059669',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
                     <HeartHandshake size={20} strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
                       Add Caregiver Contact
                     </h3>
-                    <p style={{ fontSize: '12px', color: '#6B7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
                       Register trusted contact for emergency dispatch.
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setIsAddOpen(false)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '6px' }}>
+                <button onClick={() => setIsAddOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', padding: '6px' }}>
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleSaveAdd} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Caregiver Name *
                   </label>
                   <input
@@ -268,12 +404,12 @@ export function CaregiversView() {
                     placeholder="e.g. Carlos Reyes"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Phone Number *
                   </label>
                   <input
@@ -282,18 +418,18 @@ export function CaregiversView() {
                     placeholder="+63 917 555 0199"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Assigned Patient
                   </label>
                   <select
                     value={formData.patientName}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+                    style={{ width: '100%', height: '42px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--border-input)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}
                   >
                     {users.map((u) => (
                       <option key={u.id} value={u.name}>{u.name}</option>
@@ -302,7 +438,7 @@ export function CaregiversView() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Relationship
                   </label>
                   <input
@@ -310,12 +446,12 @@ export function CaregiversView() {
                     placeholder="e.g. Spouse, Daughter, Son"
                     value={formData.relationship}
                     onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-                  <button type="button" onClick={() => setIsAddOpen(false)} style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#4B5563', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => setIsAddOpen(false)} style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                     Cancel
                   </button>
                   <button type="submit" style={{ height: '40px', padding: '0 22px', borderRadius: '10px', border: 'none', backgroundColor: '#10B981', color: '#FFFFFF', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)' }}>
@@ -335,26 +471,37 @@ export function CaregiversView() {
             <div className="modal-dialog" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      backgroundColor: darkMode ? 'rgba(16, 185, 129, 0.2)' : '#ECFDF5',
+                      color: darkMode ? '#34D399' : '#059669',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
                     <Edit2 size={20} strokeWidth={2.4} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#111827', margin: 0 }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
                       Edit Caregiver Contact
                     </h3>
-                    <p style={{ fontSize: '12px', color: '#6B7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
                       Update caregiver information and assigned patient.
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setEditingContact(null)} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', padding: '6px' }}>
+                <button onClick={() => setEditingContact(null)} style={{ background: 'none', border: 'none', color: 'var(--text-faint)', cursor: 'pointer', padding: '6px' }}>
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Caregiver Name
                   </label>
                   <input
@@ -362,12 +509,12 @@ export function CaregiversView() {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Phone Number
                   </label>
                   <input
@@ -375,18 +522,18 @@ export function CaregiversView() {
                     required
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Assigned Patient
                   </label>
                   <select
                     value={formData.patientName}
                     onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: '#FFFFFF' }}
+                    style={{ width: '100%', height: '42px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--border-input)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}
                   >
                     {users.map((u) => (
                       <option key={u.id} value={u.name}>{u.name}</option>
@@ -395,19 +542,19 @@ export function CaregiversView() {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#374151', marginBottom: '5px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                     Relationship
                   </label>
                   <input
                     type="text"
                     value={formData.relationship}
                     onChange={(e) => setFormData({ ...formData, relationship: e.target.value })}
-                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid #D1D5DB', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '42px', padding: '0 14px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
-                  <button type="button" onClick={() => setEditingContact(null)} style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1px solid #D1D5DB', backgroundColor: '#FFFFFF', color: '#4B5563', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  <button type="button" onClick={() => setEditingContact(null)} style={{ height: '40px', padding: '0 18px', borderRadius: '10px', border: '1px solid var(--border-input)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                     Cancel
                   </button>
                   <button type="submit" style={{ height: '40px', padding: '0 22px', borderRadius: '10px', border: 'none', backgroundColor: '#10B981', color: '#FFFFFF', fontSize: '13.5px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 3px 10px rgba(16, 185, 129, 0.3)' }}>

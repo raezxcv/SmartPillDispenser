@@ -9,15 +9,9 @@ import 'package:smartdose/shared/widgets/smartdose_loading.dart';
 class CompartmentInventoryScreen extends StatelessWidget {
   const CompartmentInventoryScreen({super.key});
 
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
-
-  Stream<QuerySnapshot<Map<String, dynamic>>>? get _compartmentsStream {
-    final uid = _uid;
-    if (uid == null) return null;
+  Stream<QuerySnapshot<Map<String, dynamic>>> get _compartmentsStream {
     return FirebaseFirestore.instance
         .collection('compartments')
-        .where('patientUid', isEqualTo: uid)
-        .orderBy('compartmentNumber')
         .snapshots();
   }
 
@@ -163,7 +157,13 @@ class CompartmentInventoryScreen extends StatelessWidget {
             return const Center(child: SmartDoseLoading(size: 140));
           }
 
-          final docs = snapshot.data?.docs ?? [];
+          final rawDocs = snapshot.data?.docs ?? [];
+          final docs = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(rawDocs)
+            ..sort((a, b) {
+              final aNum = a.data()['compartmentNumber'] as int? ?? int.tryParse(a.id.replaceAll(RegExp(r'\D'), '')) ?? 0;
+              final bNum = b.data()['compartmentNumber'] as int? ?? int.tryParse(b.id.replaceAll(RegExp(r'\D'), '')) ?? 0;
+              return aNum.compareTo(bNum);
+            });
 
           if (docs.isEmpty) {
             return Center(

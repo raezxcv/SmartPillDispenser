@@ -271,14 +271,28 @@ class PairingService {
   /// Stream of active connected caregivers for a patient
   Stream<List<Map<String, dynamic>>> getConnectedCaregiversStream(String patientUid) {
     return _db
-        .collection('pairings')
-        .where('patientUid', isEqualTo: patientUid)
+        .collection('contacts')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final allDocs = snapshot.docs;
+      final matchingDocs = allDocs.where((doc) {
+        final data = doc.data();
+        final pUid = (data['patientUid'] ?? data['patientId'] ?? '').toString();
+        if (patientUid.isEmpty || pUid.isEmpty) return true;
+        return pUid == patientUid;
+      }).toList();
+
+      final listToMap = matchingDocs.isNotEmpty ? matchingDocs : allDocs;
+      return listToMap.map((doc) {
+        final data = doc.data();
         return {
           'pairingId': doc.id,
-          ...doc.data(),
+          'caregiverName': data['name'] ?? data['caregiverName'] ?? 'Caregiver',
+          'caregiverEmail': data['email'] ?? data['phone'] ?? '',
+          'relationship': data['relationship'] ?? 'Family Member',
+          'role': data['role'] ?? 'Primary Caregiver',
+          'lastActive': data['updatedAt'] ?? data['createdAt'],
+          ...data,
         };
       }).toList();
     });

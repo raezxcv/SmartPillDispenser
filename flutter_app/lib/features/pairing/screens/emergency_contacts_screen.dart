@@ -545,7 +545,6 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
             StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('contacts')
-                  .where('patientUid', isEqualTo: _uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -557,7 +556,15 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                   );
                 }
 
-                final docs = snapshot.data?.docs ?? [];
+                final allDocs = snapshot.data?.docs ?? [];
+                final matchingDocs = allDocs.where((doc) {
+                  final data = doc.data();
+                  final pUid = (data['patientUid'] ?? data['patientId'] ?? '').toString();
+                  if (_uid == null || pUid.isEmpty) return true;
+                  return pUid == _uid || (data['patientName'] != null && data['patientName'] == _userName);
+                }).toList();
+
+                final docs = matchingDocs.isNotEmpty ? matchingDocs : allDocs;
 
                 if (docs.isEmpty) {
                   return Container(

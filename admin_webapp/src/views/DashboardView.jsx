@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { SkeletonDashboard } from '../components/SkeletonLoader';
 import {
   Users,
   HeartHandshake,
@@ -35,12 +36,17 @@ export function DashboardView() {
     compartments,
     medications,
     firestoreConnected,
+    initialLoading,
     setActiveTab,
     darkMode
   } = useApp();
 
   const [timeRange, setTimeRange] = useState('7D'); // '7D' | '14D' | '30D'
   const [hoveredBar, setHoveredBar] = useState(null);
+
+  if (initialLoading) {
+    return <SkeletonDashboard />;
+  }
 
   // Dynamic Metrics from Live Database
   const patientsCount = users.length;
@@ -112,11 +118,6 @@ export function DashboardView() {
   const chartMap = getDynamicChartData();
   const activeChart = chartMap[timeRange] || chartMap['7D'];
   const avgPct = Math.round(activeChart.reduce((acc, c) => acc + c.pct, 0) / activeChart.length) || computedAdherence;
-
-  // Compliance Breakdown across actual users
-  const highCompliancePatients = users.filter(u => (u.adherencePercent || 90) >= 90).length;
-  const moderatePatients = users.filter(u => (u.adherencePercent || 90) >= 70 && (u.adherencePercent || 90) < 90).length;
-  const needsAttentionPatients = users.filter(u => (u.adherencePercent || 90) < 70).length;
 
   // Next scheduled cycle
   const nextDispense = medications[0]?.time || '08:00 PM';
@@ -443,214 +444,141 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* ── Interactive SVG Adherence & Compliance Breakdown ── */}
+      {/* ── Weekly Adherence Overview (Full-Width) ── */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px'
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '24px',
+          padding: '24px',
+          boxShadow: 'var(--shadow-card)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
         }}
       >
-        {/* Weekly Adherence Chart */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-light)',
-            borderRadius: '24px',
-            padding: '24px',
-            boxShadow: 'var(--shadow-card)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
-                  Weekly Adherence Overview
-                </h3>
-                <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
-                  Combined fleet dose confirmation performance
-                </p>
-              </div>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
+                Weekly Adherence Overview
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-subtle)', margin: '2px 0 0' }}>
+                Combined fleet dose confirmation performance across {patientsCount} patients
+              </p>
+            </div>
 
-              {/* Time Range Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '18px', fontWeight: '800', color: '#059669', marginRight: '6px' }}>
-                  {avgPct}%
-                </span>
-                <div style={{ display: 'flex', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', padding: '2px' }}>
-                  {['7D', '14D', '30D'].map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTimeRange(t)}
+            {/* Time Range Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '18px', fontWeight: '800', color: '#059669', marginRight: '6px' }}>
+                {avgPct}%
+              </span>
+              <div style={{ display: 'flex', backgroundColor: 'var(--bg-subtle)', borderRadius: '8px', padding: '2px' }}>
+                {['7D', '14D', '30D'].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTimeRange(t)}
+                    style={{
+                      padding: '4px 10px',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '11.5px',
+                      fontWeight: '700',
+                      backgroundColor: timeRange === t ? 'var(--bg-card)' : 'transparent',
+                      color: timeRange === t ? 'var(--text-main)' : 'var(--text-subtle)',
+                      cursor: 'pointer',
+                      boxShadow: timeRange === t ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                    }}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive SVG Bar Visualizer */}
+          <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', paddingTop: '10px', position: 'relative' }}>
+            {activeChart.map((d, i) => {
+              const heightPct = Math.max(d.pct, 20);
+              const isHovered = hoveredBar === i;
+              return (
+                <div
+                  key={d.label}
+                  onMouseEnter={() => setHoveredBar(i)}
+                  onMouseLeave={() => setHoveredBar(null)}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    height: '100%',
+                    justifyContent: 'flex-end',
+                    position: 'relative',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isHovered && (
+                    <div
                       style={{
+                        position: 'absolute',
+                        top: '-24px',
+                        backgroundColor: '#111827',
+                        color: '#FFFFFF',
                         padding: '3px 8px',
-                        border: 'none',
                         borderRadius: '6px',
                         fontSize: '11px',
                         fontWeight: '700',
-                        backgroundColor: timeRange === t ? 'var(--bg-card)' : 'transparent',
-                        color: timeRange === t ? 'var(--text-main)' : 'var(--text-subtle)',
-                        cursor: 'pointer',
-                        boxShadow: timeRange === t ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                        whiteSpace: 'nowrap',
+                        zIndex: 20
                       }}
                     >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+                      {d.pct}% ({d.taken}/{d.scheduled} taken)
+                    </div>
+                  )}
 
-            {/* Interactive SVG Bar Visualizer */}
-            <div style={{ height: '140px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '10px', paddingTop: '10px', position: 'relative' }}>
-              {activeChart.map((d, i) => {
-                const heightPct = Math.max(d.pct, 20);
-                const isHovered = hoveredBar === i;
-                return (
                   <div
-                    key={d.label}
-                    onMouseEnter={() => setHoveredBar(i)}
-                    onMouseLeave={() => setHoveredBar(null)}
                     style={{
-                      flex: 1,
+                      width: '100%',
+                      maxWidth: '44px',
+                      height: '110px',
+                      backgroundColor: 'var(--bg-subtle)',
+                      borderRadius: '16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'center',
-                      height: '100%',
                       justifyContent: 'flex-end',
-                      position: 'relative',
-                      cursor: 'pointer'
+                      overflow: 'hidden',
+                      transition: 'transform 0.15s'
                     }}
                   >
-                    {isHovered && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '-24px',
-                          backgroundColor: '#111827',
-                          color: '#FFFFFF',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          whiteSpace: 'nowrap',
-                          zIndex: 20
-                        }}
-                      >
-                        {d.pct}% ({d.taken}/{d.scheduled} taken)
-                      </div>
-                    )}
-
                     <div
                       style={{
                         width: '100%',
-                        maxWidth: '32px',
-                        height: '100px',
-                        backgroundColor: 'var(--bg-subtle)',
+                        height: `${heightPct}%`,
+                        background: 'linear-gradient(180deg, #00C882 0%, #00A36C 100%)',
                         borderRadius: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-end',
-                        overflow: 'hidden',
-                        transition: 'transform 0.15s'
+                        transition: 'height 0.3s ease'
                       }}
-                    >
-                      <div
-                        style={{
-                          width: '100%',
-                          height: `${heightPct}%`,
-                          background: 'linear-gradient(180deg, #00C882 0%, #00A36C 100%)',
-                          borderRadius: '16px',
-                          transition: 'height 0.3s ease'
-                        }}
-                      />
-                    </div>
-
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: isHovered ? '#059669' : 'var(--text-subtle)', marginTop: '8px' }}>
-                      {d.label}
-                    </span>
+                    />
                   </div>
-                );
-              })}
-            </div>
-          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '12px', marginTop: '14px', fontSize: '12px', color: 'var(--text-subtle)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <CheckCircle2 size={14} color="#10B981" /> 98.4% IR Pill Removal Verified
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <ScanFace size={14} color="#10B981" /> AI Face Verified
-            </span>
+                  <span style={{ fontSize: '12px', fontWeight: '700', color: isHovered ? '#059669' : 'var(--text-subtle)', marginTop: '8px' }}>
+                    {d.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Patient Compliance Distribution */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-light)',
-            borderRadius: '24px',
-            padding: '24px',
-            boxShadow: 'var(--shadow-card)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between'
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
-                Compliance Distribution
-              </h3>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-subtle)' }}>Across {patientsCount} Patients</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: '600', color: '#047857' }}>● High Compliance (&gt;90%)</span>
-                  <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>{highCompliancePatients} Patients ({Math.round((highCompliancePatients / (patientsCount || 1)) * 100)}%)</span>
-                </div>
-                <div style={{ height: '7px', backgroundColor: 'var(--border-input)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(highCompliancePatients / (patientsCount || 1)) * 100}%`, height: '100%', backgroundColor: '#10B981', borderRadius: '4px' }} />
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: '600', color: '#B45309' }}>● Moderate (70–89%)</span>
-                  <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>{moderatePatients} Patients ({Math.round((moderatePatients / (patientsCount || 1)) * 100)}%)</span>
-                </div>
-                <div style={{ height: '7px', backgroundColor: 'var(--border-input)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(moderatePatients / (patientsCount || 1)) * 100}%`, height: '100%', backgroundColor: '#F59E0B', borderRadius: '4px' }} />
-                </div>
-              </div>
-
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: '600', color: '#B91C1C' }}>● Requires Attention (&lt;70%)</span>
-                  <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>{needsAttentionPatients} Patients ({Math.round((needsAttentionPatients / (patientsCount || 1)) * 100)}%)</span>
-                </div>
-                <div style={{ height: '7px', backgroundColor: 'var(--border-input)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(needsAttentionPatients / (patientsCount || 1)) * 100}%`, height: '100%', backgroundColor: '#EF4444', borderRadius: '4px' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-subtle)' }}>Next scheduled dispense cycle: <strong>{nextDispense}</strong></span>
-            <button
-              onClick={() => setActiveTab('reports')}
-              style={{ background: 'none', border: 'none', color: '#10B981', fontSize: '12.5px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '2px' }}
-            >
-              Full Analytics <ChevronRight size={14} />
-            </button>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '12px', marginTop: '14px', fontSize: '12px', color: 'var(--text-subtle)', flexWrap: 'wrap', gap: '8px' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <CheckCircle2 size={14} color="#10B981" /> 98.4% IR Pill Removal Verified
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <ScanFace size={14} color="#10B981" /> AI Vision Face Verified
+          </span>
+          <span>Next scheduled dispense cycle: <strong>{nextDispense}</strong></span>
         </div>
       </div>
 

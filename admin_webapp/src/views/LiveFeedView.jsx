@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Camera,
   CameraOff,
@@ -18,9 +19,13 @@ import {
 } from 'lucide-react';
 
 export function LiveFeedView() {
-  const { devices, activities, requestCameraCapture, showToast, darkMode } = useApp();
+  const { devices, activities, requestCameraCapture, showToast, darkMode, initialLoading } = useApp();
   const [selectedDeviceId, setSelectedDeviceId] = useState(devices[0]?.deviceId || 'SD-0119');
   const [isCapturing, setIsCapturing] = useState(false);
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Live Camera Feed & AI Face Verification" />;
+  }
 
   const selectedDevice = devices.find(d => d.deviceId === selectedDeviceId) || devices[0] || {};
   const isOnline = selectedDevice.status === 'online' || selectedDevice.isOnline === true;

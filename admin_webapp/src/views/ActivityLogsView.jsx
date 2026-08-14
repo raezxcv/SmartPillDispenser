@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Activity,
   Search,
@@ -16,9 +17,13 @@ import {
 } from 'lucide-react';
 
 export function ActivityLogsView() {
-  const { activities, showToast, darkMode } = useApp();
+  const { activities, showToast, darkMode, initialLoading } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Activity Logs & Audit Trail" />;
+  }
 
   const getLogDetails = (log) => {
     const type = (log.type || '').toLowerCase();

@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import { Pill, Clock, MoreVertical, Send, Play, CheckCircle2 } from 'lucide-react';
 
 export function MedicationView() {
-  const { medications, remindPatient, triggerDispense, darkMode } = useApp();
+  const { medications, remindPatient, triggerDispense, darkMode, initialLoading } = useApp();
   const [activeMenuId, setActiveMenuId] = useState(null);
   const menuRef = useRef(null);
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Medication Schedules" />;
+  }
 
   // Close 3-dot menu on outside click
   useEffect(() => {

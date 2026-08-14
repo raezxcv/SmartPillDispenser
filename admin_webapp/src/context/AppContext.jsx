@@ -361,6 +361,7 @@ export function AppProvider({ children }) {
   });
   const [toast, setToast] = useState(null);
   const [firestoreConnected, setFirestoreConnected] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Sync Dark Mode Class to document root
   useEffect(() => {
@@ -385,11 +386,13 @@ export function AppProvider({ children }) {
 
     const initListeners = () => {
       try {
-        // 1. Live listener for users
+        // 1. Live listener for patients (users collection filtered to strictly patients)
         const unsubUsers = onSnapshot(collection(db, 'users'), (snap) => {
           if (!snap.empty) {
             setFirestoreConnected(true);
-            const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const list = snap.docs
+              .map(d => ({ id: d.id, ...d.data() }))
+              .filter(u => u.role !== 'admin' && !u.isAdmin); // Separate admins from patients
             setUsers(list);
           }
         }, () => {});
@@ -405,11 +408,29 @@ export function AppProvider({ children }) {
         }, () => {});
         unsubs.push(unsubAdmins);
 
-        // 3. Live listener for contacts
+        // 3. Live listener for contacts (Real-time sync with mobile app contacts)
         const unsubContacts = onSnapshot(collection(db, 'contacts'), (snap) => {
           setFirestoreConnected(true);
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setCaregivers(list);
+          if (!snap.empty) {
+            const list = snap.docs.map(d => {
+              const data = d.data();
+              return {
+                id: d.id,
+                name: data.name || 'Caregiver',
+                phone: data.phone || '',
+                email: data.email || '',
+                relationship: data.relationship || 'Family Member',
+                patientName: data.patientName || 'Patient',
+                patientId: data.patientId || data.patientUid || '',
+                pairingStatus: data.pairingStatus || 'paired',
+                smsAlerts: data.smsAlerts ?? true,
+                ...data
+              };
+            });
+            setCaregivers(list);
+          } else {
+            setCaregivers([]);
+          }
         }, () => {});
         unsubs.push(unsubContacts);
 
@@ -613,6 +634,10 @@ export function AppProvider({ children }) {
       }
       setAuthChecked(true);
       initListeners();
+      const loadTimer = setTimeout(() => {
+        setInitialLoading(false);
+      }, 350);
+      unsubs.push(() => clearTimeout(loadTimer));
     });
 
     return () => {
@@ -864,18 +889,24 @@ export function AppProvider({ children }) {
     showToast(`User status updated to ${newStatus}`);
   };
 
-  // ── Caregiver Contacts CRUD ──
+  // ── Caregiver Contacts CRUD (Real-time Firestore Sync with Mobile App) ──
   const createContact = async (contactData) => {
     try {
       const newDoc = {
-        ...contactData,
+        name: contactData.name || '',
+        phone: contactData.phone || '',
+        email: contactData.email || '',
+        patientName: contactData.patientName || 'Patient',
+        patientUid: contactData.patientId || contactData.patientUid || '',
+        relationship: contactData.relationship || 'Caregiver',
         pairingStatus: contactData.pairingStatus || 'paired',
         smsAlerts: contactData.smsAlerts ?? true,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       };
       const docRef = await addDoc(collection(db, 'contacts'), newDoc);
       const fullContact = { id: docRef.id, ...newDoc };
-      setCaregivers(prev => [fullContact, ...prev]);
+      setCaregivers(prev => [fullContact, ...prev.filter(c => c.id !== docRef.id)]);
       addActivity(`Added caregiver contact (${contactData.name})`, contactData.patientName, 'CONTACT');
       showToast(`Caregiver ${contactData.name} added!`);
       return { success: true, id: docRef.id };
@@ -887,7 +918,12 @@ export function AppProvider({ children }) {
 
   const updateContact = async (contactId, updatedData) => {
     try {
-      await updateDoc(doc(db, 'contacts', contactId), updatedData);
+      const payload = {
+        ...updatedData,
+        patientUid: updatedData.patientId || updatedData.patientUid || '',
+        updatedAt: serverTimestamp()
+      };
+      await updateDoc(doc(db, 'contacts', contactId), payload);
     } catch (e) {}
     setCaregivers(prev => prev.map(c => c.id === contactId ? { ...c, ...updatedData } : c));
     showToast('Contact updated successfully');
@@ -936,14 +972,14 @@ export function AppProvider({ children }) {
     showToast('All alerts marked as read');
   };
 
-  // ── 10-Compartment Configuration & Management ──
+  // ── 10-Compartment Configuration & Management (Real Database Sync to Mobile App) ──
   const saveCompartment = async (compData) => {
     const compNum = compData.compartmentNumber;
     const docId = compData.id || `comp_${compNum}`;
     const stock = Number(compData.stockCount ?? 0);
     const maxCap = Number(compData.maxCapacity ?? 30);
     let status = 'good';
-    if (stock === 0) status = 'empty';
+    if (stock === 0 || !compData.medicationName) status = 'empty';
     else if (stock <= 5) status = 'low';
 
     const payload = {
@@ -961,8 +997,29 @@ export function AppProvider({ children }) {
     };
 
     try {
+      // 1. Persist directly to Firestore compartments collection
       await setDoc(doc(db, 'compartments', docId), payload, { merge: true });
-    } catch (e) {}
+
+      // 2. Also persist to schedules collection so the Flutter mobile app meds tab displays the scheduled medication
+      if (payload.medicationName && payload.patientUid) {
+        await setDoc(doc(db, 'schedules', `sched_comp_${compNum}`), {
+          patientUid: payload.patientUid,
+          patientName: payload.patientName,
+          medicationName: payload.medicationName,
+          dosage: payload.dosage,
+          compartment: `Compartment ${compNum}`,
+          compCode: `C${compNum}`,
+          time: payload.scheduleTime !== '--:--' ? payload.scheduleTime : '08:00 AM',
+          frequency: payload.frequency || 'Daily',
+          status: 'active',
+          pillsLeft: stock,
+          deviceId: payload.deviceId,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Error persisting compartment to Firestore:', e);
+    }
 
     setCompartments(prev => prev.map(c => c.compartmentNumber === compNum ? {
       ...c,
@@ -995,6 +1052,7 @@ export function AppProvider({ children }) {
 
     try {
       await setDoc(doc(db, 'compartments', docId), emptyPayload, { merge: true });
+      await deleteDoc(doc(db, 'schedules', `sched_comp_${compNum}`)).catch(() => {});
     } catch (e) {}
 
     setCompartments(prev => prev.map(c => c.compartmentNumber === compNum ? {
@@ -1144,6 +1202,7 @@ export function AppProvider({ children }) {
       systemSettings,
       toast,
       firestoreConnected,
+      initialLoading,
       showToast,
       seedLiveFirestoreFleet,
       login,

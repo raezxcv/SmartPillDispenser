@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   HeartHandshake,
   UserPlus,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export function CaregiversView() {
-  const { caregivers, users, createContact, updateContact, deleteContact, showToast, darkMode } = useApp();
+  const { caregivers, users, createContact, updateContact, deleteContact, showToast, darkMode, initialLoading } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -24,6 +25,10 @@ export function CaregiversView() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [activeMenuId, setActiveMenuId] = useState(null);
   const menuRef = useRef(null);
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Caregivers & Contacts" />;
+  }
 
   // Close 3-dot menu on click outside
   useEffect(() => {
@@ -428,12 +433,22 @@ export function CaregiversView() {
                   </label>
                   <select
                     value={formData.patientName}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    onChange={(e) => {
+                      const patients = users.filter(u => u.role !== 'admin' && !u.isAdmin);
+                      const selectedUser = patients.find(u => u.name === e.target.value);
+                      setFormData({
+                        ...formData,
+                        patientName: e.target.value,
+                        patientId: selectedUser?.id || ''
+                      });
+                    }}
                     style={{ width: '100%', height: '42px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--border-input)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}
                   >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.name}>{u.name}</option>
-                    ))}
+                    {users
+                      .filter(u => u.role !== 'admin' && !u.isAdmin)
+                      .map((u) => (
+                        <option key={u.id} value={u.name}>{u.name}</option>
+                      ))}
                   </select>
                 </div>
 
@@ -532,12 +547,22 @@ export function CaregiversView() {
                   </label>
                   <select
                     value={formData.patientName}
-                    onChange={(e) => setFormData({ ...formData, patientName: e.target.value })}
+                    onChange={(e) => {
+                      const patients = users.filter(u => u.role !== 'admin' && !u.isAdmin);
+                      const selectedUser = patients.find(u => u.name === e.target.value);
+                      setFormData({
+                        ...formData,
+                        patientName: e.target.value,
+                        patientId: selectedUser?.id || ''
+                      });
+                    }}
                     style={{ width: '100%', height: '42px', padding: '0 12px', borderRadius: '10px', border: '1px solid var(--border-input)', fontSize: '13.5px', outline: 'none', boxSizing: 'border-box', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)' }}
                   >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.name}>{u.name}</option>
-                    ))}
+                    {users
+                      .filter(u => u.role !== 'admin' && !u.isAdmin)
+                      .map((u) => (
+                        <option key={u.id} value={u.name}>{u.name}</option>
+                      ))}
                   </select>
                 </div>
 

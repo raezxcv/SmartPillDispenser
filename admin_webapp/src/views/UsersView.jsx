@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Search,
   UserPlus,
@@ -19,10 +20,14 @@ import {
 } from 'lucide-react';
 
 export function UsersView() {
-  const { users, createUser, updateUser, deleteUser, updateUserStatus, showToast, darkMode } = useApp();
+  const { users, createUser, updateUser, deleteUser, updateUserStatus, showToast, darkMode, initialLoading } = useApp();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="User management" />;
+  }
 
   // Modals state
   const [selectedUser, setSelectedUser] = useState(null);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Package,
   Plus,
@@ -17,12 +18,16 @@ import {
 } from 'lucide-react';
 
 export function InventoryView() {
-  const { compartments, users, devices, saveCompartment, clearCompartment, refillCompartmentSlot, showToast, darkMode } = useApp();
+  const { compartments, users, devices, saveCompartment, clearCompartment, refillCompartmentSlot, showToast, darkMode, initialLoading } = useApp();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [activeMenuSlot, setActiveMenuSlot] = useState(null);
   const menuRef = useRef(null);
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Compartment inventory" />;
+  }
 
   // Close 3-dot menu on outside click
   useEffect(() => {
@@ -601,7 +606,8 @@ export function InventoryView() {
                     <select
                       value={formData.patientName}
                       onChange={(e) => {
-                        const selectedUser = users.find(u => u.name === e.target.value);
+                        const patients = users.filter(u => u.role !== 'admin' && !u.isAdmin);
+                        const selectedUser = patients.find(u => u.name === e.target.value);
                         setFormData({
                           ...formData,
                           patientName: e.target.value,
@@ -623,9 +629,11 @@ export function InventoryView() {
                       }}
                     >
                       <option value="Unassigned">Unassigned</option>
-                      {users.map((u) => (
-                        <option key={u.id} value={u.name}>{u.name} ({u.deviceId || 'No Unit'})</option>
-                      ))}
+                      {users
+                        .filter(u => u.role !== 'admin' && !u.isAdmin)
+                        .map((u) => (
+                          <option key={u.id} value={u.name}>{u.name} ({u.deviceId || 'No Unit'})</option>
+                        ))}
                     </select>
                   </div>
                 </div>

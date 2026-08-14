@@ -1,10 +1,16 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import { AlertTriangle, PhoneCall, Check, MessageSquare } from 'lucide-react';
 
 export function EmergencyView() {
-  const { emergencies, resolveEmergency } = useApp();
+  const { alerts, showToast, darkMode, initialLoading } = useApp();
+  const emergencies = (alerts || []).filter(a => a.severity === 'critical');
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Emergency Queue" />;
+  }
 
   return (
     <div className="animate-fade-in content-container" style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>

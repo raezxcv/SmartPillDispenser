@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   User,
   Mail,
@@ -36,11 +37,16 @@ export function SettingsView() {
     firestoreConnected,
     darkMode,
     toggleDarkMode,
-    showToast
+    showToast,
+    initialLoading
   } = useApp();
 
   // Profile form
   const [profileName, setProfileName] = useState(currentUser.name);
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Settings & Admin Access" />;
+  }
 
   // Add Admin Modal
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);

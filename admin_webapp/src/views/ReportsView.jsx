@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Download,
   BarChart3,
@@ -13,8 +14,12 @@ import {
 } from 'lucide-react';
 
 export function ReportsView() {
-  const { activities, medications, users, showToast, darkMode } = useApp();
+  const { activities, medications, users, showToast, darkMode, initialLoading } = useApp();
   const [selectedRange, setSelectedRange] = useState('7D'); // '7D' | '30D'
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Compliance & Fleet Reports" />;
+  }
 
   // Dynamic calculations from live database records
   const totalTaken = activities.filter(a => (a.status === 'taken' || a.type === 'dispense_success')).length;

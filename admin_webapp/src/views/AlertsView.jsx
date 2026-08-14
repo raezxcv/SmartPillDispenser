@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { StatusBadge } from '../components/StatusBadge';
+import { SkeletonGenericPage } from '../components/SkeletonLoader';
 import {
   Bell,
   Check,
@@ -14,9 +15,13 @@ import {
 } from 'lucide-react';
 
 export function AlertsView() {
-  const { alerts, toggleAlertRead, markAllAlertsAsRead, darkMode } = useApp();
+  const { alerts, toggleAlertRead, markAllAlertsAsRead, darkMode, initialLoading } = useApp();
   const [readFilter, setReadFilter] = useState('all'); // 'all' | 'unread' | 'read'
   const [filterSev, setFilterSev] = useState('');
+
+  if (initialLoading) {
+    return <SkeletonGenericPage title="Alerts & Fleet Notifications" />;
+  }
 
   const unreadCount = alerts.filter(a => !a.isRead).length;
 

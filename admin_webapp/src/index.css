@@ -217,3 +217,36 @@ input, button, select, textarea {
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
   animation: pulseGreen 2s infinite ease-in-out;
 }
+
+/* Shimmer Skeleton Loading */
+@keyframes shimmerPulse {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-box {
+  background: linear-gradient(
+    90deg,
+    rgba(229, 231, 235, 0.6) 25%,
+    rgba(243, 244, 246, 0.95) 37%,
+    rgba(229, 231, 235, 0.6) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmerPulse 1.6s infinite ease-in-out;
+  border-radius: 8px;
+}
+
+.dark .skeleton-box,
+[data-theme="dark"] .skeleton-box {
+  background: linear-gradient(
+    90deg,
+    rgba(39, 39, 42, 0.6) 25%,
+    rgba(63, 63, 70, 0.85) 37%,
+    rgba(39, 39, 42, 0.6) 63%
+  );
+  background-size: 200% 100%;
+}

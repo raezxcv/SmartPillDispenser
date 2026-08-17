@@ -191,11 +191,12 @@ export function AlertsView() {
                     ? '4px solid #10B981' 
                     : '4px solid var(--border-input)',
                   borderRadius: '16px',
-                  padding: '18px 22px',
+                  padding: 'clamp(14px, 2.5vw, 20px)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: '16px',
+                  gap: '14px',
+                  flexWrap: 'wrap',
                   boxShadow: isUnread ? '0 4px 14px rgba(16, 185, 129, 0.08)' : 'var(--shadow-card)',
                   transition: 'all 0.15s ease'
                 }}

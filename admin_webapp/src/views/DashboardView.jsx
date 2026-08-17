@@ -150,13 +150,7 @@ export function DashboardView() {
       </div>
 
       {/* ── 6 KPI Metric Cards Grid ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '16px'
-        }}
-      >
+      <div className="responsive-grid-kpi">
         {/* Patients (Emerald Gradient) */}
         <div
           onClick={() => setActiveTab('users')}
@@ -450,7 +444,7 @@ export function DashboardView() {
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-light)',
           borderRadius: '24px',
-          padding: '24px',
+          padding: 'clamp(16px, 3vw, 24px)',
           boxShadow: 'var(--shadow-card)',
           display: 'flex',
           flexDirection: 'column',
@@ -498,7 +492,7 @@ export function DashboardView() {
           </div>
 
           {/* Interactive SVG Bar Visualizer */}
-          <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', paddingTop: '10px', position: 'relative' }}>
+          <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', paddingTop: '10px', position: 'relative', overflowX: 'auto' }}>
             {activeChart.map((d, i) => {
               const heightPct = Math.max(d.pct, 20);
               const isHovered = hoveredBar === i;
@@ -509,6 +503,7 @@ export function DashboardView() {
                   onMouseLeave={() => setHoveredBar(null)}
                   style={{
                     flex: 1,
+                    minWidth: '28px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -562,7 +557,7 @@ export function DashboardView() {
                     />
                   </div>
 
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: isHovered ? '#059669' : 'var(--text-subtle)', marginTop: '8px' }}>
+                  <span style={{ fontSize: '11.5px', fontWeight: '700', color: isHovered ? '#059669' : 'var(--text-subtle)', marginTop: '8px' }}>
                     {d.label}
                   </span>
                 </div>
@@ -578,7 +573,7 @@ export function DashboardView() {
           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <ScanFace size={14} color="#10B981" /> AI Vision Face Verified
           </span>
-          <span>Next scheduled dispense cycle: <strong>{nextDispense}</strong></span>
+          <span>Next scheduled cycle: <strong>{nextDispense}</strong></span>
         </div>
       </div>
 
@@ -590,13 +585,7 @@ export function DashboardView() {
           </h3>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: '12px'
-          }}
-        >
+        <div className="responsive-grid-actions">
           {[
             { id: 'users', label: 'User management', icon: Users },
             { id: 'live_feed', label: 'Live Camera & AI', icon: Camera },
@@ -669,13 +658,7 @@ export function DashboardView() {
           </p>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '14px'
-          }}
-        >
+        <div className="responsive-grid-health">
           {/* Firebase */}
           <div
             style={{

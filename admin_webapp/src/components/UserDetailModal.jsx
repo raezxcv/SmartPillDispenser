@@ -23,10 +23,11 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
       onClick={onClose}
     >
       <div
+        className="modal-dialog"
         style={{
           backgroundColor: 'var(--bg-card)',
           borderRadius: '22px',
-          padding: '28px',
+          padding: 'clamp(18px, 4vw, 28px)',
           maxWidth: '520px',
           width: '100%',
           boxShadow: 'var(--shadow-modal)',
@@ -80,7 +81,7 @@ export function UserDetailModal({ user, onClose, onStatusChange, onResetPassword
         </div>
 
         {/* Info Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '24px' }}>
+        <div className="responsive-form-grid" style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
           <div style={{ padding: '12px', backgroundColor: 'var(--bg-subtle)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-faint)', textTransform: 'uppercase', marginBottom: '4px' }}>Status</div>
             <StatusBadge status={user.status || 'active'} />

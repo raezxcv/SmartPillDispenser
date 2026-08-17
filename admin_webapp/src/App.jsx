@@ -19,7 +19,7 @@ import { ReportsView } from './views/ReportsView';
 import { SettingsView } from './views/SettingsView';
 
 function MainLayout() {
-  const { activeTab, isAuthenticated } = useApp();
+  const { activeTab, isAuthenticated, mobileSidebarOpen, setMobileSidebarOpen } = useApp();
 
   if (!isAuthenticated) {
     return <LoginView />;
@@ -54,6 +54,13 @@ function MainLayout() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-app)', color: 'var(--text-main)', transition: 'background-color 0.25s ease' }}>
+      {/* Mobile Backdrop Overlay */}
+      <div
+        className={`sidebar-backdrop ${mobileSidebarOpen ? 'active' : ''}`}
+        onClick={() => setMobileSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
       {/* Sidebar with official app logo */}
       <Sidebar />
 
@@ -64,11 +71,13 @@ function MainLayout() {
         <main
           style={{
             flex: 1,
-            padding: '32px 36px 60px',
+            padding: 'clamp(14px, 3vw, 36px) clamp(12px, 3.5vw, 36px) 60px',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           <div style={{ width: '100%', maxWidth: '980px' }}>

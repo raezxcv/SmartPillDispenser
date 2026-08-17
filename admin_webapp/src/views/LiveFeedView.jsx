@@ -149,8 +149,9 @@ export function LiveFeedView() {
         style={{
           position: 'relative',
           width: '100%',
-          height: '420px',
-          borderRadius: '28px',
+          minHeight: '340px',
+          height: 'clamp(340px, 45vw, 420px)',
+          borderRadius: '24px',
           backgroundColor: darkMode ? '#181F2E' : '#DFE6EE',
           background: darkMode
             ? 'linear-gradient(180deg, #1E293B 0%, #0F172A 100%)'
@@ -161,13 +162,13 @@ export function LiveFeedView() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          padding: '24px',
+          padding: 'clamp(14px, 3vw, 24px)',
           boxSizing: 'border-box',
           transition: 'background 0.25s ease'
         }}
       >
         {/* Top Badges */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', zIndex: 10 }}>
           <div
             style={{
               display: 'flex',
@@ -176,12 +177,12 @@ export function LiveFeedView() {
               backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
               backdropFilter: 'blur(8px)',
               border: '1px solid var(--border-light)',
-              padding: '6px 14px',
+              padding: '5px 12px',
               borderRadius: '9999px'
             }}
           >
             <div className="pulse-live-dot" />
-            <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#10B981', letterSpacing: '0.04em' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#10B981', letterSpacing: '0.04em' }}>
               {isOnline ? 'CAMERA ACTIVE' : 'CAMERA STANDBY'}
             </span>
           </div>
@@ -194,9 +195,9 @@ export function LiveFeedView() {
               backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
               backdropFilter: 'blur(8px)',
               border: '1px solid var(--border-light)',
-              padding: '6px 14px',
+              padding: '5px 12px',
               borderRadius: '9999px',
-              fontSize: '11.5px',
+              fontSize: '11px',
               color: 'var(--text-main)',
               fontWeight: '600'
             }}
@@ -214,15 +215,16 @@ export function LiveFeedView() {
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gap: '12px',
-            zIndex: 5
+            gap: '10px',
+            zIndex: 5,
+            padding: '10px 0'
           }}
         >
           {/* Circular Camera-Off Badge */}
           <div
             style={{
-              width: '84px',
-              height: '84px',
+              width: '72px',
+              height: '72px',
               borderRadius: '50%',
               backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(148, 163, 184, 0.35)',
               display: 'flex',
@@ -232,21 +234,21 @@ export function LiveFeedView() {
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)'
             }}
           >
-            <VideoOff size={38} strokeWidth={2} />
+            <VideoOff size={32} strokeWidth={2} />
           </div>
 
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-main)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>
               Camera Standby
             </h3>
-            <p style={{ fontSize: '13.5px', color: 'var(--text-subtle)', margin: 0, maxWidth: '340px', lineHeight: '1.4' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-subtle)', margin: 0, maxWidth: '320px', lineHeight: '1.4' }}>
               Waiting for camera connection or dispensing event...
             </p>
           </div>
         </div>
 
         {/* Bottom Actions: Take Photo / Capture CTA */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', zIndex: 10 }}>
           <button
             onClick={handleCapture}
             disabled={isCapturing}
@@ -254,12 +256,12 @@ export function LiveFeedView() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              padding: '11px 22px',
-              borderRadius: '14px',
+              padding: '10px 20px',
+              borderRadius: '12px',
               border: 'none',
               backgroundColor: '#10B981',
               color: '#FFFFFF',
-              fontSize: '13.5px',
+              fontSize: '13px',
               fontWeight: '700',
               cursor: 'pointer',
               boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)',
@@ -268,13 +270,13 @@ export function LiveFeedView() {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#059669')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#10B981')}
           >
-            <Camera size={18} strokeWidth={2.4} className={isCapturing ? 'animate-pulse' : ''} />
+            <Camera size={17} strokeWidth={2.4} className={isCapturing ? 'animate-pulse' : ''} />
             <span>{isCapturing ? 'Capturing...' : 'Take Photo (Capture)'}</span>
           </button>
 
           <div
             style={{
-              fontSize: '12px',
+              fontSize: '11.5px',
               color: 'var(--text-subtle)',
               backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.75)',
               padding: '6px 12px',

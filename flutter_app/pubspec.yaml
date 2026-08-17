@@ -56,6 +56,8 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/Smart Dose App Logo.png"
   min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/Smart Dose App Logo.png"
   web:
     generate: true
     image_path: "assets/Smart Dose App Logo.png"

@@ -10,11 +10,22 @@ import {
   CheckCheck,
   RotateCcw,
   ExternalLink,
+  Menu,
   X
 } from 'lucide-react';
 
 export function Topbar() {
-  const { currentUser, logout, alerts = [], toggleAlertRead, markAllAlertsAsRead, darkMode, toggleDarkMode, setActiveTab } = useApp();
+  const {
+    currentUser,
+    logout,
+    alerts = [],
+    toggleAlertRead,
+    markAllAlertsAsRead,
+    darkMode,
+    toggleDarkMode,
+    setActiveTab,
+    toggleMobileSidebar
+  } = useApp();
   const [showBellMenu, setShowBellMenu] = useState(false);
   const [bellTab, setBellTab] = useState('unread'); // 'unread' | 'all'
   const dropdownRef = useRef(null);
@@ -48,7 +59,7 @@ export function Topbar() {
         position: 'sticky',
         top: 0,
         zIndex: 40,
-        padding: '0 36px',
+        padding: '0 clamp(14px, 3.5vw, 36px)',
         boxSizing: 'border-box',
         transition: 'background-color 0.25s ease, border-color 0.25s ease'
       }}
@@ -59,29 +70,54 @@ export function Topbar() {
           maxWidth: '980px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          gap: '12px'
         }}
       >
-        {/* Left: System Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
+        {/* Left: Hamburger menu toggle (Tablet/Mobile) + System Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Mobile Hamburger Toggle Button */}
+          <button
+            className="show-on-tablet"
+            onClick={toggleMobileSidebar}
+            aria-label="Open navigation menu"
             style={{
-              display: 'flex',
+              display: 'none',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#10B981'
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-light)',
+              backgroundColor: 'var(--bg-subtle)',
+              color: 'var(--text-main)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Activity size={19} strokeWidth={2.4} />
-          </div>
-          <div style={{ fontSize: '13.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span>SmartDose status:</span>
-            <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>Operational</span>
+            <Menu size={20} strokeWidth={2.2} />
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#10B981'
+              }}
+            >
+              <Activity size={18} strokeWidth={2.4} />
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span className="hide-on-mobile">SmartDose status:</span>
+              <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>Operational</span>
+            </div>
           </div>
         </div>
 
         {/* Right Controls: Dark Mode Toggle, Notification Bell, User Avatar, Name, Logout */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
           
           {/* ── Dark / Light Mode Toggle Button (Icon Only) ── */}
           <button
@@ -162,7 +198,7 @@ export function Topbar() {
                   position: 'absolute',
                   top: '46px',
                   right: 0,
-                  width: '360px',
+                  width: 'min(360px, calc(100vw - 28px))',
                   backgroundColor: 'var(--bg-card)',
                   borderRadius: '16px',
                   boxShadow: 'var(--shadow-dropdown)',
@@ -170,7 +206,8 @@ export function Topbar() {
                   padding: '14px',
                   zIndex: 100,
                   color: 'var(--text-main)',
-                  animation: 'scaleUpModal 0.18s ease-out forwards'
+                  animation: 'scaleUpModal 0.18s ease-out forwards',
+                  boxSizing: 'border-box'
                 }}
               >
                 {/* Header */}
@@ -332,6 +369,7 @@ export function Topbar() {
 
           {/* User Name */}
           <div
+            className="hide-on-mobile"
             onClick={() => setActiveTab('settings')}
             title="Open Settings & Profile"
             style={{

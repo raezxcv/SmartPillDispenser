@@ -10,11 +10,12 @@ import {
   BarChart3,
   Camera,
   History,
-  Settings
+  Settings,
+  X
 } from 'lucide-react';
 
 export function Sidebar() {
-  const { activeTab, setActiveTab, alerts = [], darkMode } = useApp();
+  const { activeTab, setActiveTab, alerts = [], darkMode, mobileSidebarOpen, setMobileSidebarOpen } = useApp();
   const unreadAlertsCount = alerts.filter(a => !a.isRead).length;
 
   const NAV_SECTIONS = [
@@ -50,8 +51,16 @@ export function Sidebar() {
     }
   ];
 
+  const handleSelectTab = (id) => {
+    setActiveTab(id);
+    if (setMobileSidebarOpen) {
+      setMobileSidebarOpen(false);
+    }
+  };
+
   return (
     <aside
+      className={`sidebar-drawer ${mobileSidebarOpen ? 'open' : ''}`}
       style={{
         width: '270px',
         minWidth: '270px',
@@ -64,42 +73,66 @@ export function Sidebar() {
         top: 0,
         overflowY: 'auto',
         userSelect: 'none',
-        transition: 'background-color 0.25s ease, border-color 0.25s ease'
+        transition: 'background-color 0.25s ease, border-color 0.25s ease',
+        zIndex: 999
       }}
     >
       {/* Brand Header */}
       <div
         style={{
-          padding: '22px 22px 18px',
+          padding: '20px 20px 18px',
           display: 'flex',
           alignItems: 'center',
-          gap: '14px',
+          justifyContent: 'space-between',
           borderBottom: '1px solid var(--border-light)'
         }}
       >
-        <img
-          src="/logo.png"
-          alt="SmartDose"
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '13px',
-            objectFit: 'cover',
-            boxShadow: '0 3px 10px rgba(16, 185, 129, 0.28)',
-            flexShrink: 0
-          }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-        <div>
-          <div style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
-            SmartDose
-          </div>
-          <div style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-subtle)', marginTop: '2px' }}>
-            Admin console
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img
+            src="/logo.png"
+            alt="SmartDose"
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              objectFit: 'cover',
+              boxShadow: '0 3px 10px rgba(16, 185, 129, 0.28)',
+              flexShrink: 0
+            }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <div>
+            <div style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+              SmartDose
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-subtle)', marginTop: '2px' }}>
+              Admin console
+            </div>
           </div>
         </div>
+
+        {/* Mobile Close Button */}
+        <button
+          className="show-on-tablet"
+          onClick={() => setMobileSidebarOpen(false)}
+          aria-label="Close navigation drawer"
+          style={{
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            borderRadius: '9px',
+            border: '1px solid var(--border-light)',
+            backgroundColor: 'var(--bg-subtle)',
+            color: 'var(--text-subtle)',
+            cursor: 'pointer'
+          }}
+        >
+          <X size={18} strokeWidth={2.2} />
+        </button>
       </div>
 
       {/* Navigation Sections */}
@@ -128,7 +161,7 @@ export function Sidebar() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleSelectTab(item.id)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -192,3 +225,4 @@ export function Sidebar() {
     </aside>
   );
 }
+

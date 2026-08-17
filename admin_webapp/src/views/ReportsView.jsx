@@ -133,13 +133,7 @@ export function ReportsView() {
       </div>
 
       {/* ── 4 KPI Stats from Real Database ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '14px'
-        }}
-      >
+      <div className="responsive-grid-kpi">
         <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', padding: '18px 20px', boxShadow: 'var(--shadow-card)' }}>
           <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--text-subtle)', textTransform: 'uppercase' }}>Fleet Adherence Rate</div>
           <div style={{ fontSize: '26px', fontWeight: '800', color: '#059669', marginTop: '2px' }}>{adherenceRate}%</div>
@@ -166,7 +160,7 @@ export function ReportsView() {
       </div>
 
       {/* ── 7-Day Visual Trend Chart Card ── */}
-      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '20px', padding: '24px', boxShadow: 'var(--shadow-card)' }}>
+      <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '20px', padding: 'clamp(16px, 3vw, 24px)', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h3 style={{ fontSize: '16.5px', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>
@@ -190,11 +184,11 @@ export function ReportsView() {
         </div>
 
         {/* Bar Visualizer */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', height: '190px', paddingTop: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', height: '190px', paddingTop: '20px', overflowX: 'auto' }}>
           {daysData.map((d) => {
             const heightPx = Math.round((d.taken / 32) * 140);
             return (
-              <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <div key={d.day} style={{ flex: 1, minWidth: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#059669' }}>{d.rate}%</span>
                 
                 <div
@@ -232,7 +226,7 @@ export function ReportsView() {
           })}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '14px', marginTop: '18px', fontSize: '12px', color: 'var(--text-subtle)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '14px', marginTop: '18px', fontSize: '12px', color: 'var(--text-subtle)', flexWrap: 'wrap', gap: '8px' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <CheckCircle size={14} color="#10B981" /> Database Logs Synced: <strong>{activities.length} records</strong>
           </span>

@@ -132,11 +132,11 @@ export function SettingsView() {
           </div>
         </div>
 
-        <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+        <form onSubmit={handleProfileSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="responsive-form-grid" style={{ display: 'grid', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '5px' }}>
-                Display Name
+                Full Name
               </label>
               <input
                 type="text"
@@ -180,7 +180,7 @@ export function SettingsView() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
             <button
               type="submit"
               style={{
@@ -224,7 +224,7 @@ export function SettingsView() {
         </form>
       </div>
 
-      {/* ── Section 2: Console Administrators Table ── */}
+      {/* ── Section 2: Console Administrators Table (Responsive Touch-Scroll) ── */}
       <div style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '18px', overflow: 'hidden', boxShadow: 'var(--shadow-card)' }}>
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
@@ -262,16 +262,17 @@ export function SettingsView() {
         </div>
 
         {/* Admins Table */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'var(--bg-subtle)' }}>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Administrator</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Email Address</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Role</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Status</th>
-              <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
+        <div className="responsive-table-container">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: 'var(--bg-subtle)' }}>
+                <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Administrator</th>
+                <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Email Address</th>
+                <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Role</th>
+                <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase' }}>Status</th>
+                <th style={{ padding: '12px 24px', fontWeight: '700', color: 'var(--text-subtle)', fontSize: '11.5px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
           <tbody>
             {admins.map((adm, idx) => (
               <tr key={adm.id} style={{ borderBottom: idx === admins.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
@@ -320,6 +321,7 @@ export function SettingsView() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ── Section 3: Live Firebase Cloud Database Sync ── */}

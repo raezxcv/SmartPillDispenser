@@ -62,7 +62,7 @@ export function LoginView() {
           maxWidth: '420px',
           backgroundColor: 'var(--bg-card)',
           borderRadius: '24px',
-          padding: '40px 32px',
+          padding: 'clamp(28px, 6vw, 40px) clamp(18px, 5vw, 32px)',
           boxShadow: 'var(--shadow-modal)',
           border: '1px solid var(--border-light)',
           boxSizing: 'border-box'

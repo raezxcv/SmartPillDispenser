@@ -228,8 +228,9 @@ export function InventoryView() {
         </div>
       </div>
 
-      {/* ── Main 10-Compartment Table (overflow: visible to avoid clipping dropdowns) ── */}
+      {/* ── Main 10-Compartment Table (Responsive Touch-Scroll Container) ── */}
       <div
+        className="responsive-table-container"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-light)',
@@ -570,7 +571,7 @@ export function InventoryView() {
 
               <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {/* Slot Selector & Patient */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
+                <div className="responsive-form-grid" style={{ display: 'grid', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                       Hardware Slot
@@ -639,7 +640,7 @@ export function InventoryView() {
                 </div>
 
                 {/* Medication Name & Dosage */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                <div className="responsive-form-grid" style={{ display: 'grid', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                       Medication Name *
@@ -691,7 +692,7 @@ export function InventoryView() {
                 </div>
 
                 {/* Current Stock & Max Capacity */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="responsive-form-grid" style={{ display: 'grid', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                       Current Stock (Pills)
@@ -744,7 +745,7 @@ export function InventoryView() {
                 </div>
 
                 {/* Schedule Time & Frequency */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="responsive-form-grid" style={{ display: 'grid', gap: '12px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '5px' }}>
                       Daily Dispense Time

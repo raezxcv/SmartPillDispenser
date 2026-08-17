@@ -38,8 +38,9 @@ export function MedicationView() {
         </p>
       </div>
 
-      {/* ── Table Card (overflow: visible to avoid clipping dropdowns) ── */}
+      {/* ── Table Card (Responsive Touch-Scroll Container) ── */}
       <div
+        className="responsive-table-container"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-light)',

@@ -330,6 +330,7 @@ const DEFAULT_COMPARTMENTS = Array.from({ length: 10 }, (_, i) => {
 
 export function AppProvider({ children }) {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [darkMode, setDarkMode] = useState(() => {
@@ -337,6 +338,10 @@ export function AppProvider({ children }) {
     if (saved) return saved === 'dark';
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   });
+
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen(prev => !prev);
+  };
 
   const [currentUser, setCurrentUser] = useState({
     uid: 'adm_01',
@@ -892,13 +897,17 @@ export function AppProvider({ children }) {
   // ── Caregiver Contacts CRUD (Real-time Firestore Sync with Mobile App) ──
   const createContact = async (contactData) => {
     try {
+      const pUid = contactData.patientId || contactData.patientUid || '';
       const newDoc = {
         name: contactData.name || '',
+        caregiverName: contactData.name || '',
         phone: contactData.phone || '',
         email: contactData.email || '',
         patientName: contactData.patientName || 'Patient',
-        patientUid: contactData.patientId || contactData.patientUid || '',
-        relationship: contactData.relationship || 'Caregiver',
+        patientUid: pUid,
+        patientId: pUid,
+        relationship: contactData.relationship || 'Family Member',
+        role: contactData.relationship || 'Primary Caregiver',
         pairingStatus: contactData.pairingStatus || 'paired',
         smsAlerts: contactData.smsAlerts ?? true,
         createdAt: serverTimestamp(),
@@ -918,9 +927,13 @@ export function AppProvider({ children }) {
 
   const updateContact = async (contactId, updatedData) => {
     try {
+      const pUid = updatedData.patientId || updatedData.patientUid || '';
       const payload = {
         ...updatedData,
-        patientUid: updatedData.patientId || updatedData.patientUid || '',
+        caregiverName: updatedData.name || updatedData.caregiverName || '',
+        patientUid: pUid,
+        patientId: pUid,
+        role: updatedData.relationship || updatedData.role || 'Primary Caregiver',
         updatedAt: serverTimestamp()
       };
       await updateDoc(doc(db, 'contacts', contactId), payload);
@@ -1185,6 +1198,9 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       activeTab,
       setActiveTab,
+      mobileSidebarOpen,
+      setMobileSidebarOpen,
+      toggleMobileSidebar,
       authChecked,
       isAuthenticated,
       currentUser,

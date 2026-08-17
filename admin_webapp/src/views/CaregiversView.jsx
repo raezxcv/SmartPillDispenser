@@ -186,8 +186,9 @@ export function CaregiversView() {
         </div>
       </div>
 
-      {/* ── Caregivers Table (overflow: visible to avoid clipping dropdowns) ── */}
+      {/* ── Caregivers Table (Responsive Touch-Scroll Container) ── */}
       <div
+        className="responsive-table-container"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-light)',
